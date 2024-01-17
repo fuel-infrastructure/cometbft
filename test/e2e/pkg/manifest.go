@@ -120,6 +120,12 @@ type Manifest struct {
 	// Default geographical zone ID for simulating latencies, assigned to nodes that don't have a
 	// specific zone assigned.
 	DefaultZone string `toml:"default_zone"`
+
+	// Maximum size of request body, in bytes
+	RPCMaxBodyBytes uint64 `toml:"rpc_max_body_bytes"`
+
+	// Maximum size of request header, in bytes
+	RPCMaxHeaderBytes uint64 `toml:"rpc_max_header_bytes"`
 }
 
 // ManifestNode represents a node in a testnet manifest.

@@ -279,6 +279,13 @@ func MakeConfig(node *e2e.Node) (*config.Config, error) {
 		cfg.Instrumentation.Prometheus = true
 	}
 
+	if node.RPCMaxBodyBytes > 0 {
+		cfg.RPC.MaxBodyBytes = int64(node.RPCMaxBodyBytes)
+	}
+	if node.RPCMaxHeaderBytes > 0 {
+		cfg.RPC.MaxHeaderBytes = int(node.RPCMaxHeaderBytes)
+	}
+
 	return cfg, nil
 }
 
