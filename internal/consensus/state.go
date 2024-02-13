@@ -1360,6 +1360,19 @@ func (cs *State) proposalIsTimely() bool {
 	return cs.Proposal.IsTimely(cs.ProposalReceiveTime, sp)
 }
 
+func (cs *State) timelyProposalMargins(round int32) (time.Duration, time.Duration) {
+	sp := types.SynchronyParams{
+		Precision:    cs.state.ConsensusParams.Synchrony.Precision,
+		MessageDelay: cs.state.ConsensusParams.Synchrony.MessageDelay,
+	}
+
+	// lhs is `proposedBlockTime - Precision` in the first inequality
+	lhs := -sp.Precision
+	// rhs is `proposedBlockTime + MsgDelay + Precision` in the second inequality
+	rhs := sp.MessageDelay + sp.Precision
+	return lhs, rhs
+}
+
 func (cs *State) defaultDoPrevote(height int64, round int32) {
 	logger := cs.Logger.With("height", height, "round", round)
 
@@ -1383,27 +1396,22 @@ func (cs *State) defaultDoPrevote(height int64, round int32) {
 	}
 
 	if cs.Proposal.POLRound == -1 && cs.LockedRound == -1 && !cs.proposalIsTimely() {
-		delta := cs.ProposalReceiveTime.Sub(cs.Proposal.Timestamp)
-		var maxDelta time.Duration
-		var reason string
-		if delta < 0 { // Proposal.Timestamp in the future (not expected)
-			reason = "timestamp in the future"
-			maxDelta = cs.state.ConsensusParams.Synchrony.Precision * -1
-		} else { // Proposal.Timestamp in the past (expected within MSGDELAY)
-			reason = "timestamp too much in the past"
-			maxDelta = cs.state.ConsensusParams.Synchrony.MessageDelay +
-				cs.state.ConsensusParams.Synchrony.Precision
+		difference := cs.ProposalReceiveTime.Sub(cs.Proposal.Timestamp)
+		if difference < 0 {
+			maxDifference, _ := cs.timelyProposalMargins(cs.Proposal.Round)
+			logger.Info("prevote step: Proposal.Timestamp is not timely; prevoting nil",
+				"reason", "timestamp too far in the future",
+				"timestamp", cs.Proposal.Timestamp.Format(time.RFC3339Nano),
+				"receiveTime", cs.ProposalReceiveTime.Format(time.RFC3339Nano),
+				"difference", difference, "max_difference", maxDifference)
+		} else {
+			_, maxDifference := cs.timelyProposalMargins(cs.Proposal.Round)
+			logger.Info("prevote step: Proposal.Timestamp is not timely; prevoting nil",
+				"reason", "timestamp too far in the past",
+				"timestamp", cs.Proposal.Timestamp.Format(time.RFC3339Nano),
+				"receiveTime", cs.ProposalReceiveTime.Format(time.RFC3339Nano),
+				"difference", difference, "max_difference", maxDifference)
 		}
-		logger.Info("prevote step: Proposal.Timestamp is not timely; prevoting nil",
-			"timestamp",
-			cmttime.Canonical(cs.Proposal.Timestamp).Format(time.RFC3339Nano),
-			"receiveTime",
-			cmttime.Canonical(cs.ProposalReceiveTime).Format(time.RFC3339Nano),
-			"delta", delta, "maxDelta", maxDelta, "reason", reason,
-			"msg_delay",
-			cs.state.ConsensusParams.Synchrony.MessageDelay,
-			"precision",
-			cs.state.ConsensusParams.Synchrony.Precision)
 		cs.signAddVote(types.PrevoteType, nil, types.PartSetHeader{}, nil)
 		return
 	}
