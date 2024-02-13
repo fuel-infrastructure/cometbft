@@ -1383,11 +1383,23 @@ func (cs *State) defaultDoPrevote(height int64, round int32) {
 	}
 
 	if cs.Proposal.POLRound == -1 && cs.LockedRound == -1 && !cs.proposalIsTimely() {
-		logger.Debug("prevote step: Proposal is not timely; prevoting nil",
-			"proposed",
+		delta := cs.ProposalReceiveTime.Sub(cs.Proposal.Timestamp)
+		var maxDelta time.Duration
+		var reason string
+		if delta < 0 { // Proposal.Timestamp in the future (not expected)
+			reason = "timestamp in the future"
+			maxDelta = cs.state.ConsensusParams.Synchrony.Precision * -1
+		} else { // Proposal.Timestamp in the past (expected within MSGDELAY)
+			reason = "timestamp too much in the past"
+			maxDelta = cs.state.ConsensusParams.Synchrony.MessageDelay +
+				cs.state.ConsensusParams.Synchrony.Precision
+		}
+		logger.Debug("prevote step: Proposal.Timestamp is not timely; prevoting nil",
+			"timestamp",
 			cmttime.Canonical(cs.Proposal.Timestamp).Format(time.RFC3339Nano),
-			"received",
+			"receiveTime",
 			cmttime.Canonical(cs.ProposalReceiveTime).Format(time.RFC3339Nano),
+			"delta", delta, "maxDelta", maxDelta, "reason", reason,
 			"msg_delay",
 			cs.state.ConsensusParams.Synchrony.MessageDelay,
 			"precision",
