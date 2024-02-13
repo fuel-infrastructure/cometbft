@@ -1,0 +1,26 @@
+prometheus = true
+
+load_tx_connections = 4
+load_tx_batch_size = 400
+load_tx_size_bytes = 1024 # 1Mb - 2 bytes for the header
+# load_max_txs = 400
+
+# to allow sending big txs via websockets
+rpc_max_header_bytes = 2097152
+rpc_max_body_bytes = 2097152
+
+[node.validator01]
+# send_no_load = true
+zone = "Frankfurt"
+
+[node.validator02]
+# send_no_load = true
+zone = "Canada"
+
+[node.validator03]
+# send_no_load = true
+zone = "Tokyo"
+
+[node.validator04]
+# send_no_load = true
+zone = "Sydney"
