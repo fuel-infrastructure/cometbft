@@ -1402,14 +1402,14 @@ func (cs *State) defaultDoPrevote(height int64, round int32) {
 			logger.Info("prevote step: Proposal.Timestamp is not timely; prevoting nil",
 				"reason", "timestamp too far in the future",
 				"timestamp", cs.Proposal.Timestamp.Format(time.RFC3339Nano),
-				"receiveTime", cs.ProposalReceiveTime.Format(time.RFC3339Nano),
+				"receive_time", cs.ProposalReceiveTime.Format(time.RFC3339Nano),
 				"difference", difference, "max_difference", maxDifference)
 		} else {
 			_, maxDifference := cs.timelyProposalMargins(cs.Proposal.Round)
 			logger.Info("prevote step: Proposal.Timestamp is not timely; prevoting nil",
 				"reason", "timestamp too far in the past",
 				"timestamp", cs.Proposal.Timestamp.Format(time.RFC3339Nano),
-				"receiveTime", cs.ProposalReceiveTime.Format(time.RFC3339Nano),
+				"receive_time", cs.ProposalReceiveTime.Format(time.RFC3339Nano),
 				"difference", difference, "max_difference", maxDifference)
 		}
 		cs.signAddVote(types.PrevoteType, nil, types.PartSetHeader{}, nil)
