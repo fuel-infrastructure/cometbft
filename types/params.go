@@ -99,7 +99,7 @@ func (p FeatureParams) PbtsEnabled(h int64) bool {
 	if h < 1 {
 		panic(fmt.Errorf("cannot check if PBTS enabled for height %d (< 1)", h))
 	}
-	if p.PbtsEnableHeight == nil {
+	if p.PbtsEnableHeight == nil || *p.PbtsEnableHeight == 0 {
 		return false
 	}
 	return *p.PbtsEnableHeight <= h
