@@ -1394,7 +1394,7 @@ func (cs *State) defaultDoPrevote(height int64, round int32) {
 			maxDelta = cs.state.ConsensusParams.Synchrony.MessageDelay +
 				cs.state.ConsensusParams.Synchrony.Precision
 		}
-		logger.Debug("prevote step: Proposal.Timestamp is not timely; prevoting nil",
+		logger.Info("prevote step: Proposal.Timestamp is not timely; prevoting nil",
 			"timestamp",
 			cmttime.Canonical(cs.Proposal.Timestamp).Format(time.RFC3339Nano),
 			"receiveTime",
