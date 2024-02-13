@@ -1352,6 +1352,10 @@ func (cs *State) enterPrevote(height int64, round int32) {
 }
 
 func (cs *State) proposalIsTimely() bool {
+	// TODO: adapt this when the transition from BFT Time and PBTS is implemented.
+	if !cs.state.ConsensusParams.Feature.PbtsEnabled(cs.Proposal.Height) {
+		panic("PBTS is not enabled")
+	}
 	sp := types.SynchronyParams{
 		Precision:    cs.state.ConsensusParams.Synchrony.Precision,
 		MessageDelay: cs.state.ConsensusParams.Synchrony.MessageDelay,
