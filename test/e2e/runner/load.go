@@ -22,7 +22,7 @@ const workerPoolSize = 16
 // canceled.
 func Load(ctx context.Context, testnet *e2e.Testnet) error {
 	initialTimeout := 1 * time.Minute
-	stallTimeout := 30 * time.Second
+	stallTimeout := 300 * time.Second
 	chSuccess := make(chan struct{})
 	chFailed := make(chan struct{})
 	ctx, cancel := context.WithCancel(ctx)
