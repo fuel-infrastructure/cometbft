@@ -313,7 +313,7 @@ func (env *Environment) BridgeCommitment(_ *rpctypes.Context, start, end uint64)
 		if err != nil {
 			return nil, err
 		}
-		encodedHeightAndDataHash := append(paddedHeight, block.DataHash[:]...)
+		encodedHeightAndDataHash := append(paddedHeight, block.Header.DataHash[:]...)
 		encodedAll := append(encodedHeightAndDataHash, txResultsRoot[:]...)
 
 		encodedLeavesNodes = append(encodedLeavesNodes, encodedAll)

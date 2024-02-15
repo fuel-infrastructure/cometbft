@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/cometbft/cometbft/types"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -133,6 +134,18 @@ func TestBridgeCommitment(t *testing.T) {
 	mockstore := &mocks.BlockStore{}
 	mockstore.On("Height").Return(int64(102))
 	mockstore.On("Base").Return(int64(1))
+	// Mimic block data
+	mockstore.On("LoadBlock", int64(100)).Return(&types.Block{
+		Header: types.Header{
+			DataHash: []byte("B8161C61B8EBBB0AFEDD2FF4921AA839CEA998BE6F202052057A7286D1FF0A67"),
+		},
+	})
+	mockstore.On("LoadBlock", int64(101)).Return(&types.Block{
+		Header: types.Header{
+			DataHash: []byte("C77FB831EBF94EB7AE9323EBD30609EE89F79918B5A532D580894A31A8CFBF37"),
+		},
+	})
+
 	env.BlockStore = mockstore
 
 	testCases := []struct {
