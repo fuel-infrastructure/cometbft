@@ -30,6 +30,8 @@ const (
 	// genesisChunkSize is the maximum size, in bytes, of each
 	// chunk in the genesis structure for the chunked API
 	genesisChunkSize = 16 * 1024 * 1024 // 16
+
+	BridgeCommitmentBlocksLimit = 1000
 )
 
 //----------------------------------------------
@@ -196,4 +198,29 @@ func (env *Environment) latestUncommittedHeight() int64 {
 		return env.BlockStore.Height()
 	}
 	return env.BlockStore.Height() + 1
+}
+
+func (env *Environment) validateDataCommitmentRange(start uint64, end uint64) error {
+	if start == 0 {
+		return fmt.Errorf("the first block is 0")
+	}
+	heightsRange := end - start
+	if heightsRange > uint64(BridgeCommitmentBlocksLimit) {
+		return fmt.Errorf("the query exceeds the limit of allowed blocks %d", BridgeCommitmentBlocksLimit)
+	}
+	if heightsRange == 0 {
+		return fmt.Errorf("cannot create the data commitments for an empty set of blocks")
+	}
+	if start >= end {
+		return fmt.Errorf("last block is smaller than first block")
+	}
+	// the data commitment range is end exclusive
+	if end > uint64(env.BlockStore.Height())+1 {
+		return fmt.Errorf(
+			"end block %d is higher than current chain height %d",
+			end,
+			env.BlockStore.Height(),
+		)
+	}
+	return nil
 }

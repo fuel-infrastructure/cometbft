@@ -254,3 +254,7 @@ type ResultEvent struct {
 	Data   types.TMEventData   `json:"data"`
 	Events map[string][]string `json:"events"`
 }
+
+type ResultBridgeCommitment struct {
+	BridgeCommitment bytes.HexBytes `json:"bridge_commitment"`
+}

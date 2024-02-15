@@ -39,6 +39,7 @@ func (env *Environment) GetRoutes() RoutesMap {
 		"consensus_params":     rpc.NewRPCFunc(env.ConsensusParams, "height", rpc.Cacheable("height")),
 		"unconfirmed_txs":      rpc.NewRPCFunc(env.UnconfirmedTxs, "limit"),
 		"num_unconfirmed_txs":  rpc.NewRPCFunc(env.NumUnconfirmedTxs, ""),
+		"bridge_commitment":    rpc.NewRPCFunc(env.BridgeCommitment, "start,end"),
 
 		// tx broadcast API
 		"broadcast_tx_commit": rpc.NewRPCFunc(env.BroadcastTxCommit, "tx"),

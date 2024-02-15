@@ -1,9 +1,12 @@
 package core
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/cometbft/cometbft/crypto/merkle"
 	"sort"
+	"strconv"
 
 	"github.com/cometbft/cometbft/libs/bytes"
 	cmtmath "github.com/cometbft/cometbft/libs/math"
@@ -263,4 +266,114 @@ func (env *Environment) BlockSearch(
 	}
 
 	return &ctypes.ResultBlockSearch{Blocks: apiResults, TotalCount: totalCount}, nil
+}
+
+type BridgeCommitmentLeaf struct {
+	height        uint64
+	dataRoot      [32]byte
+	txResultsRoot [32]byte
+}
+
+func (env *Environment) BridgeCommitment(ctx *rpctypes.Context, start, end uint64) (*ctypes.ResultBridgeCommitment, error) {
+	err := env.validateDataCommitmentRange(start, end)
+	if err != nil {
+		return nil, err
+	}
+
+	// ------ FETCHING DATA
+	leaves := make([]BridgeCommitmentLeaf, 0, end-start)
+	for height := start; height < end; height++ {
+
+		block := env.BlockStore.LoadBlock(int64(height))
+		if block == nil {
+			return nil, fmt.Errorf("couldn't load block %d", height)
+		}
+
+		results, err := env.StateStore.LoadFinalizeBlockResponse(int64(height))
+		if err != nil {
+			return nil, err
+		}
+
+		// Generate the root hashes
+		txHashes := make([][]byte, 0, len(results.TxResults))
+		for _, txResult := range results.TxResults {
+			paddedCode, err := To32PaddedHexBytes(uint64(txResult.Code))
+			if err != nil {
+				return nil, err
+			}
+			paddedTxResult := append(paddedCode, txResult.Data[:]...)
+			txHashes = append(txHashes, paddedTxResult)
+		}
+
+		// Generate the root hash of the TxResult with encoded data
+		txResultsRoot := merkle.HashFromByteSlices(txHashes)
+		leaves = append(leaves, BridgeCommitmentLeaf{
+			height:        uint64(block.Height),
+			dataRoot:      *(*[32]byte)(block.DataHash),
+			txResultsRoot: *(*[32]byte)(txResultsRoot),
+		})
+	}
+
+	// ------ HASHING BRIDGE COMMITMENT ROOT
+	for _, tuple := range tuples {
+		encodedTuple, err := EncodeDataRootTuple(
+			tuple.height,
+			tuple.dataRoot,
+		)
+		if err != nil {
+			return nil, err
+		}
+		dataRootEncodedTuples = append(dataRootEncodedTuples, encodedTuple)
+	}
+
+	tuples, err := fetchDataRootTuples(start, end)
+	if err != nil {
+		return nil, err
+	}
+	root, err := hashDataRootTuples(tuples)
+	if err != nil {
+		return nil, err
+	}
+	// Create data commitment
+	return &ctypes.ResultDataCommitment{DataCommitment: root}, nil
+}
+
+// To32PaddedHexBytes takes a number and returns its hex representation padded to 32 bytes.
+// Used to mimic the result of `abi.encode(number)` in Ethereum.
+func To32PaddedHexBytes(number uint64) ([]byte, error) {
+	hexRepresentation := strconv.FormatUint(number, 16)
+	// Make sure hex representation has even length.
+	// The `strconv.FormatUint` can return odd length hex encodings.
+	// For example, `strconv.FormatUint(10, 16)` returns `a`.
+	// Thus, we need to pad it.
+	if len(hexRepresentation)%2 == 1 {
+		hexRepresentation = "0" + hexRepresentation
+	}
+	hexBytes, hexErr := hex.DecodeString(hexRepresentation)
+	if hexErr != nil {
+		return nil, hexErr
+	}
+	paddedBytes, padErr := padBytes(hexBytes, 32)
+	if padErr != nil {
+		return nil, padErr
+	}
+	return paddedBytes, nil
+}
+
+// padBytes Pad bytes to given length
+func padBytes(byt []byte, length int) ([]byte, error) {
+	l := len(byt)
+	if l > length {
+		return nil, fmt.Errorf(
+			"cannot pad bytes because length of bytes array: %d is greater than given length: %d",
+			l,
+			length,
+		)
+	}
+	if l == length {
+		return byt, nil
+	}
+	tmp := make([]byte, length)
+	copy(tmp[length-l:], byt)
+	return tmp, nil
 }
