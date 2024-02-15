@@ -268,12 +268,6 @@ func (env *Environment) BlockSearch(
 	return &ctypes.ResultBlockSearch{Blocks: apiResults, TotalCount: totalCount}, nil
 }
 
-type BridgeCommitmentLeaf struct {
-	height        uint64
-	dataRoot      [32]byte
-	txResultsRoot [32]byte
-}
-
 func (env *Environment) BridgeCommitment(_ *rpctypes.Context, start, end uint64) (*ctypes.ResultBridgeCommitment, error) {
 	err := env.validateDataCommitmentRange(start, end)
 	if err != nil {
@@ -282,6 +276,7 @@ func (env *Environment) BridgeCommitment(_ *rpctypes.Context, start, end uint64)
 
 	// ------ FETCHING DATA
 	encodedLeavesNodes := make([][]byte, 0, end-start)
+	bridgeCommitmentLeaves := make([]ctypes.BridgeCommitmentLeaf, 0, end-start)
 	for height := start; height < end; height++ {
 
 		block := env.BlockStore.LoadBlock(int64(height))
@@ -295,18 +290,23 @@ func (env *Environment) BridgeCommitment(_ *rpctypes.Context, start, end uint64)
 		}
 
 		// Generate the root hashes
-		txHashes := make([][]byte, 0, len(results.TxResults))
+		txResultLeaves := make([]ctypes.TxResultLeaf, 0, len(results.TxResults))
+		encodedLeaves := make([][]byte, 0, len(results.TxResults))
 		for _, txResult := range results.TxResults {
 			paddedCode, err := To32PaddedHexBytes(uint64(txResult.Code))
 			if err != nil {
 				return nil, err
 			}
 			paddedTxResult := append(paddedCode, txResult.Data[:]...)
-			txHashes = append(txHashes, paddedTxResult)
-		}
+			encodedLeaves = append(encodedLeaves, paddedTxResult)
 
+			// For display
+			txResultLeaves = append(txResultLeaves, ctypes.TxResultLeaf{
+				PaddedLeaf: paddedTxResult,
+			})
+		}
 		// Generate the root hash of the TxResult with encoded data
-		txResultsRoot := merkle.HashFromByteSlices(txHashes)
+		txResultsRoot := merkle.HashFromByteSlices(encodedLeaves)
 
 		// Encode the Leaf nodes
 		paddedHeight, err := To32PaddedHexBytes(height)
@@ -315,12 +315,21 @@ func (env *Environment) BridgeCommitment(_ *rpctypes.Context, start, end uint64)
 		}
 		encodedHeightAndDataHash := append(paddedHeight, block.Header.DataHash[:]...)
 		encodedAll := append(encodedHeightAndDataHash, txResultsRoot[:]...)
-
 		encodedLeavesNodes = append(encodedLeavesNodes, encodedAll)
+
+		bridgeCommitmentLeaves = append(bridgeCommitmentLeaves, ctypes.BridgeCommitmentLeaf{
+			Height:          height,
+			DataRoot:        *(*[32]byte)(block.Header.DataHash),
+			TxResultsRoot:   *(*[32]byte)(txResultsRoot),
+			TxResultsLeaves: txResultLeaves,
+		})
 	}
 
 	root := merkle.HashFromByteSlices(encodedLeavesNodes)
-	return &ctypes.ResultBridgeCommitment{BridgeCommitment: root}, nil
+	return &ctypes.ResultBridgeCommitment{
+		BridgeCommitment:       root,
+		BridgeCommitmentLeaves: bridgeCommitmentLeaves,
+	}, nil
 }
 
 // To32PaddedHexBytes takes a number and returns its hex representation padded to 32 bytes.
