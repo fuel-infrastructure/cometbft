@@ -114,3 +114,39 @@ func TestBlockResults(t *testing.T) {
 		}
 	}
 }
+
+func TestBridgeCommitment(t *testing.T) {
+	results := &abci.ResponseFinalizeBlock{
+		TxResults: []*abci.ExecTxResult{
+			{Code: 0, Data: []byte{0x01}, Log: "ok"},
+			{Code: 0, Data: []byte{0x02}, Log: "ok"},
+		},
+	}
+
+	env := &Environment{}
+	env.StateStore = sm.NewStore(dbm.NewMemDB(), sm.StoreOptions{
+		DiscardABCIResponses: false,
+	})
+	err := env.StateStore.SaveFinalizeBlockResponse(100, results)
+	require.NoError(t, err)
+
+	mockstore := &mocks.BlockStore{}
+	mockstore.On("Height").Return(int64(102))
+	mockstore.On("Base").Return(int64(1))
+	env.BlockStore = mockstore
+
+	testCases := []struct {
+		start   uint64
+		end     uint64
+		wantErr bool
+		wantRes *ctypes.ResultBridgeCommitment
+	}{
+		{100, 102, true, nil},
+	}
+
+	for _, tc := range testCases {
+		res, err := env.BridgeCommitment(&rpctypes.Context{}, tc.start, tc.end)
+		assert.NoError(t, err)
+		assert.NotNil(t, res)
+	}
+}

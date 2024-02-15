@@ -274,7 +274,7 @@ type BridgeCommitmentLeaf struct {
 	txResultsRoot [32]byte
 }
 
-func (env *Environment) BridgeCommitment(ctx *rpctypes.Context, start, end uint64) (*ctypes.ResultBridgeCommitment, error) {
+func (env *Environment) BridgeCommitment(_ *rpctypes.Context, start, end uint64) (*ctypes.ResultBridgeCommitment, error) {
 	err := env.validateDataCommitmentRange(start, end)
 	if err != nil {
 		return nil, err
