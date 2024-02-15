@@ -281,7 +281,7 @@ func (env *Environment) BridgeCommitment(ctx *rpctypes.Context, start, end uint6
 	}
 
 	// ------ FETCHING DATA
-	leaves := make([]BridgeCommitmentLeaf, 0, end-start)
+	encodedLeavesNodes := make([][]byte, 0, end-start)
 	for height := start; height < end; height++ {
 
 		block := env.BlockStore.LoadBlock(int64(height))
@@ -307,35 +307,20 @@ func (env *Environment) BridgeCommitment(ctx *rpctypes.Context, start, end uint6
 
 		// Generate the root hash of the TxResult with encoded data
 		txResultsRoot := merkle.HashFromByteSlices(txHashes)
-		leaves = append(leaves, BridgeCommitmentLeaf{
-			height:        uint64(block.Height),
-			dataRoot:      *(*[32]byte)(block.DataHash),
-			txResultsRoot: *(*[32]byte)(txResultsRoot),
-		})
-	}
 
-	// ------ HASHING BRIDGE COMMITMENT ROOT
-	for _, tuple := range tuples {
-		encodedTuple, err := EncodeDataRootTuple(
-			tuple.height,
-			tuple.dataRoot,
-		)
+		// Encode the Leaf nodes
+		paddedHeight, err := To32PaddedHexBytes(height)
 		if err != nil {
 			return nil, err
 		}
-		dataRootEncodedTuples = append(dataRootEncodedTuples, encodedTuple)
+		encodedHeightAndDataHash := append(paddedHeight, block.DataHash[:]...)
+		encodedAll := append(encodedHeightAndDataHash, txResultsRoot[:]...)
+
+		encodedLeavesNodes = append(encodedLeavesNodes, encodedAll)
 	}
 
-	tuples, err := fetchDataRootTuples(start, end)
-	if err != nil {
-		return nil, err
-	}
-	root, err := hashDataRootTuples(tuples)
-	if err != nil {
-		return nil, err
-	}
-	// Create data commitment
-	return &ctypes.ResultDataCommitment{DataCommitment: root}, nil
+	root := merkle.HashFromByteSlices(encodedLeavesNodes)
+	return &ctypes.ResultBridgeCommitment{BridgeCommitment: root}, nil
 }
 
 // To32PaddedHexBytes takes a number and returns its hex representation padded to 32 bytes.
