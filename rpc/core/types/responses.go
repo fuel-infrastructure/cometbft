@@ -257,13 +257,13 @@ type ResultEvent struct {
 
 type BridgeCommitmentLeaf struct {
 	Height          uint64         `json:"height"`
-	DataRoot        [32]byte       `json:"data_root"`
-	TxResultsRoot   [32]byte       `json:"tx_results_root"`
+	DataRoot        bytes.HexBytes `json:"data_root"`
+	TxResultsRoot   bytes.HexBytes `json:"tx_results_root"`
 	TxResultsLeaves []TxResultLeaf `json:"tx_results_leaves"`
 }
 
 type TxResultLeaf struct {
-	PaddedLeaf []byte `json:"tx_result_leaf"`
+	PaddedLeaf bytes.HexBytes `json:"tx_result_leaf"`
 }
 
 type ResultBridgeCommitment struct {

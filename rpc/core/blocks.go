@@ -319,8 +319,8 @@ func (env *Environment) BridgeCommitment(_ *rpctypes.Context, start, end uint64)
 
 		bridgeCommitmentLeaves = append(bridgeCommitmentLeaves, ctypes.BridgeCommitmentLeaf{
 			Height:          height,
-			DataRoot:        *(*[32]byte)(block.Header.DataHash),
-			TxResultsRoot:   *(*[32]byte)(txResultsRoot),
+			DataRoot:        block.Header.DataHash,
+			TxResultsRoot:   txResultsRoot,
 			TxResultsLeaves: txResultLeaves,
 		})
 	}
