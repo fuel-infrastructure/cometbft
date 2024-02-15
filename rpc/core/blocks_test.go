@@ -117,7 +117,13 @@ func TestBlockResults(t *testing.T) {
 }
 
 func TestBridgeCommitment(t *testing.T) {
-	results := &abci.ResponseFinalizeBlock{
+	block100Results := &abci.ResponseFinalizeBlock{
+		TxResults: []*abci.ExecTxResult{
+			{Code: 0, Data: []byte{0x0a2a307837343144303545393633353835433546634538463037394432346565433839306638376535433845120b0a046675656c12033130351801}, Log: "ok"},
+			{Code: 0, Data: []byte{0x02}, Log: "ok"},
+		},
+	}
+	block101Results := &abci.ResponseFinalizeBlock{
 		TxResults: []*abci.ExecTxResult{
 			{Code: 0, Data: []byte{0x01}, Log: "ok"},
 			{Code: 0, Data: []byte{0x02}, Log: "ok"},
@@ -128,7 +134,8 @@ func TestBridgeCommitment(t *testing.T) {
 	env.StateStore = sm.NewStore(dbm.NewMemDB(), sm.StoreOptions{
 		DiscardABCIResponses: false,
 	})
-	err := env.StateStore.SaveFinalizeBlockResponse(100, results)
+	err := env.StateStore.SaveFinalizeBlockResponse(100, block100Results)
+	err = env.StateStore.SaveFinalizeBlockResponse(101, block101Results)
 	require.NoError(t, err)
 
 	mockstore := &mocks.BlockStore{}
