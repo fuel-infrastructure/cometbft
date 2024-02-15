@@ -114,3 +114,58 @@ func TestBlockResults(t *testing.T) {
 		}
 	}
 }
+
+//func TestBridgeCommitment(t *testing.T) {
+//	block100Results := &abci.ResponseFinalizeBlock{
+//		TxResults: []*abci.ExecTxResult{
+//			{Code: 0, Data: []byte{0x0a2a307837343144303545393633353835433546634538463037394432346565433839306638376535433845120b0a046675656c12033130351801}, Log: "ok"},
+//			{Code: 0, Data: []byte{0x02}, Log: "ok"},
+//		},
+//	}
+//	block101Results := &abci.ResponseFinalizeBlock{
+//		TxResults: []*abci.ExecTxResult{
+//			{Code: 0, Data: []byte{0x01}, Log: "ok"},
+//			{Code: 0, Data: []byte{0x02}, Log: "ok"},
+//		},
+//	}
+//
+//	env := &Environment{}
+//	env.StateStore = sm.NewStore(dbm.NewMemDB(), sm.StoreOptions{
+//		DiscardABCIResponses: false,
+//	})
+//	err := env.StateStore.SaveFinalizeBlockResponse(100, block100Results)
+//	err = env.StateStore.SaveFinalizeBlockResponse(101, block101Results)
+//	require.NoError(t, err)
+//
+//	mockstore := &mocks.BlockStore{}
+//	mockstore.On("Height").Return(int64(102))
+//	mockstore.On("Base").Return(int64(1))
+//	// Mimic block data
+//	mockstore.On("LoadBlock", int64(100)).Return(&types.Block{
+//		Header: types.Header{
+//			DataHash: []byte("B8161C61B8EBBB0AFEDD2FF4921AA839CEA998BE6F202052057A7286D1FF0A67"),
+//		},
+//	})
+//	mockstore.On("LoadBlock", int64(101)).Return(&types.Block{
+//		Header: types.Header{
+//			DataHash: []byte("C77FB831EBF94EB7AE9323EBD30609EE89F79918B5A532D580894A31A8CFBF37"),
+//		},
+//	})
+//
+//	env.BlockStore = mockstore
+//
+//	testCases := []struct {
+//		start   uint64
+//		end     uint64
+//		wantErr bool
+//		wantRes *ctypes.ResultBridgeCommitment
+//	}{
+//		{100, 102, true, nil},
+//	}
+//
+//	for _, tc := range testCases {
+//		res, err := env.BridgeCommitment(&rpctypes.Context{}, tc.start, tc.end)
+//		assert.NoError(t, err)
+//		assert.NotNil(t, res)
+//	}
+//}
