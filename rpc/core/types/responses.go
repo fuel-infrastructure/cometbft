@@ -263,7 +263,8 @@ type BridgeCommitmentLeaf struct {
 }
 
 type TxResultLeaf struct {
-	PaddedLeaf bytes.HexBytes `json:"tx_result_leaf"`
+	PaddedLeaf   bytes.HexBytes `json:"tx_result_leaf"`
+	ProtobufData bytes.HexBytes `json:"tx_result_protobuf"`
 }
 
 type ResultBridgeCommitment struct {

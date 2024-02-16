@@ -302,7 +302,8 @@ func (env *Environment) BridgeCommitment(_ *rpctypes.Context, start, end uint64)
 
 			// For display
 			txResultLeaves = append(txResultLeaves, ctypes.TxResultLeaf{
-				PaddedLeaf: paddedTxResult,
+				PaddedLeaf:   paddedTxResult,
+				ProtobufData: txResult.Data[:],
 			})
 		}
 		// Generate the root hash of the TxResult with encoded data
