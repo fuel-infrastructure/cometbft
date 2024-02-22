@@ -2,6 +2,7 @@ package coretypes
 
 import (
 	"encoding/json"
+	"github.com/cometbft/cometbft/crypto/merkle"
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
@@ -269,4 +270,8 @@ type BridgeCommitmentLeaf struct {
 
 type ResultsLeaf struct {
 	Results bytes.HexBytes `json:"results"`
+}
+
+type ResultTxResultInclusionProof struct {
+	Proof merkle.Proof `json:"proof"`
 }

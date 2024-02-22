@@ -335,6 +335,20 @@ func (env *Environment) BridgeCommitment(_ *rpctypes.Context, start, end uint64)
 	}, nil
 }
 
+func (env *Environment) TxResultInclusionProof(
+	_ *rpctypes.Context,
+	height int64,
+	txIndexInBlock int64,
+) (*ctypes.ResultTxResultInclusionProof, error) {
+	blockResponse, err := env.StateStore.LoadFinalizeBlockResponse(int64(height))
+	if err != nil {
+		return nil, err
+	}
+
+	proof := types.NewResults(blockResponse.TxResults).ProveResult(int(txIndexInBlock))
+	return &ctypes.ResultTxResultInclusionProof{Proof: proof}, nil
+}
+
 // To32PaddedHexBytes takes a number and returns its hex representation padded to 32 bytes.
 // Used to mimic the result of `abi.encode(number)` in Ethereum.
 func To32PaddedHexBytes(number uint64) ([]byte, error) {
