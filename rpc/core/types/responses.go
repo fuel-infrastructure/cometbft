@@ -262,7 +262,8 @@ type BridgeCommitmentLeaf struct {
 }
 
 type ResultBridgeCommitment struct {
-	BridgeCommitmentHash bytes.HexBytes `json:"bridge_commitment_hash"`
+	BridgeCommitmentHash      bytes.HexBytes `json:"bridge_commitment_hash"`
+	BridgeCommitmentHashBytes []byte         `json:"bridge_commitment_hash_bytes"`
 }
 
 type ResultBridgeCommitmentInclusionProof struct {

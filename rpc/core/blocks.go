@@ -270,7 +270,7 @@ func (env *Environment) BlockSearch(
 }
 
 func (env *Environment) BridgeCommitment(_ *rpctypes.Context, start, end uint64) (*ctypes.ResultBridgeCommitment, error) {
-	err := env.validateDataCommitmentRange(start, end)
+	err := env.validateBridgeCommitmentRange(start, end)
 	if err != nil {
 		return nil, err
 	}
@@ -290,23 +290,23 @@ func (env *Environment) BridgeCommitment(_ *rpctypes.Context, start, end uint64)
 			return nil, err
 		}
 
-		// Temp for viewing purposes
-		txResultDeterministic := types.NewResults(results.TxResults)
-
-		l := len(txResultDeterministic)
-		bzs := make([]ctypes.ResultsLeaf, l)
-		for i := 0; i < l; i++ {
-			bz, err := txResultDeterministic[i].Marshal()
-			if err != nil {
-				panic(err)
-			}
-			var data bytes.HexBytes
-			err = (&data).Unmarshal(bz)
-			if err != nil {
-				return nil, err
-			}
-			bzs[i] = ctypes.ResultsLeaf{Results: data}
-		}
+		//// Temp for viewing purposes
+		//txResultDeterministic := types.NewResults(results.TxResults)
+		//
+		//l := len(txResultDeterministic)
+		//bzs := make([]ctypes.ResultsLeaf, l)
+		//for i := 0; i < l; i++ {
+		//	bz, err := txResultDeterministic[i].Marshal()
+		//	if err != nil {
+		//		panic(err)
+		//	}
+		//	var data bytes.HexBytes
+		//	err = (&data).Unmarshal(bz)
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//	bzs[i] = ctypes.ResultsLeaf{Results: data}
+		//}
 
 		// Generate the root hash of the TxResult with encoded data (TODO This can be taken from next block)
 		txResultsRoot := state.TxResultsHash(results.TxResults)
@@ -321,33 +321,33 @@ func (env *Environment) BridgeCommitment(_ *rpctypes.Context, start, end uint64)
 		encodedLeavesNodes = append(encodedLeavesNodes, encodedAll)
 
 		bridgeCommitmentLeaves = append(bridgeCommitmentLeaves, ctypes.BridgeCommitmentLeaf{
-			Height:        height,
-			DataHash:      block.Header.DataHash,
-			ResultsHash:   txResultsRoot,
-			ResultsLeaves: bzs,
+			Height:      height,
+			DataHash:    block.Header.DataHash,
+			ResultsHash: txResultsRoot,
 		})
 	}
 
 	root := merkle.HashFromByteSlices(encodedLeavesNodes)
 	return &ctypes.ResultBridgeCommitment{
-		BridgeCommitmentHash: root,
-		Leaves:               bridgeCommitmentLeaves,
+		BridgeCommitmentHash:      root,
+		BridgeCommitmentHashBytes: root,
 	}, nil
 }
 
-func (env *Environment) TxResultInclusionProof(
-	_ *rpctypes.Context,
-	height int64,
-	txIndexInBlock int64,
-) (*ctypes.ResultTxResultInclusionProof, error) {
-	blockResponse, err := env.StateStore.LoadFinalizeBlockResponse(int64(height))
-	if err != nil {
-		return nil, err
-	}
-
-	proof := types.NewResults(blockResponse.TxResults).ProveResult(int(txIndexInBlock))
-	return &ctypes.ResultTxResultInclusionProof{Proof: proof}, nil
-}
+//
+//func (env *Environment) TxResultInclusionProof(
+//	_ *rpctypes.Context,
+//	height int64,
+//	txIndexInBlock int64,
+//) (*ctypes.ResultTxResultInclusionProof, error) {
+//	blockResponse, err := env.StateStore.LoadFinalizeBlockResponse(int64(height))
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	proof := types.NewResults(blockResponse.TxResults).ProveResult(int(txIndexInBlock))
+//	return &ctypes.ResultTxResultInclusionProof{Proof: proof}, nil
+//}
 
 // To32PaddedHexBytes takes a number and returns its hex representation padded to 32 bytes.
 // Used to mimic the result of `abi.encode(number)` in Ethereum.
