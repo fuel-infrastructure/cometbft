@@ -2,7 +2,6 @@ package coretypes
 
 import (
 	"encoding/json"
-	"github.com/cometbft/cometbft/crypto/merkle"
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
@@ -256,22 +255,40 @@ type ResultEvent struct {
 	Events map[string][]string `json:"events"`
 }
 
-type ResultBridgeCommitment struct {
-	BridgeCommitmentHash bytes.HexBytes         `json:"bridge_commitment_hash"`
-	Leaves               []BridgeCommitmentLeaf `json:"bridge_leaves"`
-}
-
 type BridgeCommitmentLeaf struct {
-	Height        uint64         `json:"height"`
-	DataHash      bytes.HexBytes `json:"data_hash"`
-	ResultsHash   bytes.HexBytes `json:"results_hash"`
-	ResultsLeaves []ResultsLeaf  `json:"results_leaves"`
+	Height      uint64         `json:"height"`
+	DataHash    bytes.HexBytes `json:"data_hash"`
+	ResultsHash bytes.HexBytes `json:"results_hash"`
 }
 
-type ResultsLeaf struct {
-	Results bytes.HexBytes `json:"results"`
+type ResultBridgeCommitment struct {
+	BridgeCommitmentHash bytes.HexBytes `json:"bridge_commitment_hash"`
 }
 
-type ResultTxResultInclusionProof struct {
-	Proof merkle.Proof `json:"proof"`
+type ResultBridgeCommitmentInclusionProof struct {
+
+	// ------ Verify that a block was in BridgeCommitment
+
+	// BridgeCommitmentLeaf is a leaf node in the BridgeCommitment merkle.
+	BridgeCommitmentLeaf BridgeCommitmentLeaf `json:"bridge_commitment_Leaf"`
+
+	// BridgeCommitmentMerkleProof is the merkle proof to proof a BridgeCommitmentLeaf is in the BridgeCommitment
+	// merkle tree.
+	BridgeCommitmentMerkleProof BinaryMerkleProof `json:"bridge_commitment_merkle_proof"`
+
+	// ------ Verify that a transaction was in TxResult
+
+	// TransactionEncoded is the encoded transaction which the inclusion proof is for.
+	TransactionEncoded bytes.HexBytes `json:"transaction_encoded"`
+	// TxResultMerkleProof is the merkle proof to proof the result of a transaction if in the merkle tree.
+	TxResultMerkleProof BinaryMerkleProof `json:"tx_result_merkle_proof"`
+}
+
+type BinaryMerkleProof struct {
+	// SideNodes is a list of side nodes to verify and calculate tree.
+	SideNodes []bytes.HexBytes `json:"side_nodes"`
+	// Key is the key of the leaf to verify.
+	Key uint64 `json:"key"`
+	// NumLeaves is the number of leaves in the tree
+	NumLeaves uint64 `json:"num_leaves"`
 }
