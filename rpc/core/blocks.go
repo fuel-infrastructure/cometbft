@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cometbft/cometbft/crypto/merkle"
+	"github.com/cometbft/cometbft/state"
 	"sort"
 	"strconv"
 
@@ -289,25 +290,26 @@ func (env *Environment) BridgeCommitment(_ *rpctypes.Context, start, end uint64)
 			return nil, err
 		}
 
-		// Generate the root hashes
-		txResultLeaves := make([]ctypes.TxResultLeaf, 0, len(results.TxResults))
-		encodedLeaves := make([][]byte, 0, len(results.TxResults))
-		for _, txResult := range results.TxResults {
-			paddedCode, err := To32PaddedHexBytes(uint64(txResult.Code))
+		// Temp for viewing purposes
+		txResultDeterministic := types.NewResults(results.TxResults)
+
+		l := len(txResultDeterministic)
+		bzs := make([]ctypes.ResultsLeaf, l)
+		for i := 0; i < l; i++ {
+			bz, err := txResultDeterministic[i].Marshal()
+			if err != nil {
+				panic(err)
+			}
+			var data bytes.HexBytes
+			err = (&data).Unmarshal(bz)
 			if err != nil {
 				return nil, err
 			}
-			paddedTxResult := append(paddedCode, txResult.Data[:]...)
-			encodedLeaves = append(encodedLeaves, paddedTxResult)
-
-			// For display
-			txResultLeaves = append(txResultLeaves, ctypes.TxResultLeaf{
-				PaddedLeaf:   paddedTxResult,
-				ProtobufData: txResult.Data[:],
-			})
+			bzs[i] = ctypes.ResultsLeaf{Results: data}
 		}
-		// Generate the root hash of the TxResult with encoded data
-		txResultsRoot := merkle.HashFromByteSlices(encodedLeaves)
+
+		// Generate the root hash of the TxResult with encoded data (TODO This can be taken from next block)
+		txResultsRoot := state.TxResultsHash(results.TxResults)
 
 		// Encode the Leaf nodes
 		paddedHeight, err := To32PaddedHexBytes(height)
@@ -319,17 +321,17 @@ func (env *Environment) BridgeCommitment(_ *rpctypes.Context, start, end uint64)
 		encodedLeavesNodes = append(encodedLeavesNodes, encodedAll)
 
 		bridgeCommitmentLeaves = append(bridgeCommitmentLeaves, ctypes.BridgeCommitmentLeaf{
-			Height:          height,
-			DataRoot:        block.Header.DataHash,
-			TxResultsRoot:   txResultsRoot,
-			TxResultsLeaves: txResultLeaves,
+			Height:        height,
+			DataHash:      block.Header.DataHash,
+			ResultsHash:   txResultsRoot,
+			ResultsLeaves: bzs,
 		})
 	}
 
 	root := merkle.HashFromByteSlices(encodedLeavesNodes)
 	return &ctypes.ResultBridgeCommitment{
-		BridgeCommitment:       root,
-		BridgeCommitmentLeaves: bridgeCommitmentLeaves,
+		BridgeCommitmentHash: root,
+		Leaves:               bridgeCommitmentLeaves,
 	}, nil
 }
 

@@ -255,19 +255,18 @@ type ResultEvent struct {
 	Events map[string][]string `json:"events"`
 }
 
-type BridgeCommitmentLeaf struct {
-	Height          uint64         `json:"height"`
-	DataRoot        bytes.HexBytes `json:"data_root"`
-	TxResultsRoot   bytes.HexBytes `json:"tx_results_root"`
-	TxResultsLeaves []TxResultLeaf `json:"tx_results_leaves"`
-}
-
-type TxResultLeaf struct {
-	PaddedLeaf   bytes.HexBytes `json:"tx_result_leaf"`
-	ProtobufData bytes.HexBytes `json:"tx_result_protobuf"`
-}
-
 type ResultBridgeCommitment struct {
-	BridgeCommitment       bytes.HexBytes         `json:"bridge_commitment"`
-	BridgeCommitmentLeaves []BridgeCommitmentLeaf `json:"bridge_commitment_leaves"`
+	BridgeCommitmentHash bytes.HexBytes         `json:"bridge_commitment_hash"`
+	Leaves               []BridgeCommitmentLeaf `json:"bridge_leaves"`
+}
+
+type BridgeCommitmentLeaf struct {
+	Height        uint64         `json:"height"`
+	DataHash      bytes.HexBytes `json:"data_hash"`
+	ResultsHash   bytes.HexBytes `json:"results_hash"`
+	ResultsLeaves []ResultsLeaf  `json:"results_leaves"`
+}
+
+type ResultsLeaf struct {
+	Results bytes.HexBytes `json:"results"`
 }
