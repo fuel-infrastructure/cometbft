@@ -225,3 +225,21 @@ func (env *Environment) validateBridgeCommitmentRange(start uint64, end uint64) 
 	}
 	return nil
 }
+
+// validateBridgeCommitmentInclusionProofRequest validates the request to generate a bridge commitment
+// inclusion proof.
+func (env *Environment) validateBridgeCommitmentInclusionProofRequest(height uint64, start uint64, end uint64) error {
+	err := env.validateBridgeCommitmentRange(start, end)
+	if err != nil {
+		return err
+	}
+	if height < start || height >= end {
+		return fmt.Errorf(
+			"height %d should be in the end exclusive interval first_block %d last_block %d",
+			height,
+			start,
+			end,
+		)
+	}
+	return nil
+}

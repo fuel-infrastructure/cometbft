@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cometbft/cometbft/crypto/merkle"
-	"github.com/cometbft/cometbft/state"
 	"sort"
 	"strconv"
 
@@ -269,14 +268,78 @@ func (env *Environment) BlockSearch(
 	return &ctypes.ResultBlockSearch{Blocks: apiResults, TotalCount: totalCount}, nil
 }
 
-func (env *Environment) BridgeCommitment(_ *rpctypes.Context, start, end uint64) (*ctypes.ResultBridgeCommitment, error) {
+func (env *Environment) BridgeCommitment(_ *rpctypes.Context,
+	start, end uint64,
+) (*ctypes.ResultBridgeCommitment, error) {
 	err := env.validateBridgeCommitmentRange(start, end)
 	if err != nil {
 		return nil, err
 	}
 
-	// ------ FETCHING DATA
-	encodedLeavesNodes := make([][]byte, 0, end-start)
+	// Fetch data
+	leaves, err := env.fetchBridgeCommitmentLeaves(start, end)
+	if err != nil {
+		return nil, err
+	}
+	// Encode data to match solidity side
+	encodedLeaves, err := env.encodeBridgeCommitmentLeaves(leaves)
+	if err != nil {
+		return nil, err
+	}
+	// Generate merkle root
+	root := merkle.HashFromByteSlices(encodedLeaves)
+
+	return &ctypes.ResultBridgeCommitment{
+		BridgeCommitmentHash: root,
+	}, nil
+}
+
+func (env *Environment) BridgeCommitmentInclusionProof(
+	_ *rpctypes.Context,
+	height, txIndex int64,
+	start, end uint64,
+) (*ctypes.ResultBridgeCommitmentInclusionProof, error) {
+	err := env.validateBridgeCommitmentInclusionProofRequest(uint64(height), start, end)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch data
+	leaves, err := env.fetchBridgeCommitmentLeaves(start, end)
+	if err != nil {
+		return nil, err
+	}
+	// Encode data to match solidity side
+	encodedLeaves, err := env.encodeBridgeCommitmentLeaves(leaves)
+	if err != nil {
+		return nil, err
+	}
+	// Get proofs of the BridgeCommitment leaves
+	_, proofs := merkle.ProofsFromByteSlices(encodedLeaves)
+
+	// The Leaf of the BridgeCommitment the inclusion proof is for
+	keyLeaf := leaves[height-int64(leaves[0].Height)]
+
+	// Load the transactions that composed the LastResultsHash
+	finalizeBlockResponse, err := env.StateStore.LoadFinalizeBlockResponse(height)
+	if err != nil {
+		return nil, err
+	}
+	if int(txIndex) >= len(finalizeBlockResponse.TxResults) {
+		return nil, fmt.Errorf("transaction index not found %d", txIndex)
+	}
+	txResultProof := types.NewResults(finalizeBlockResponse.TxResults).ProveResult(int(txIndex))
+
+	return &ctypes.ResultBridgeCommitmentInclusionProof{
+		BridgeCommitmentLeaf:        keyLeaf,
+		BridgeCommitmentMerkleProof: *proofs[height-int64(leaves[0].Height)],
+		ExecTxResult:                *finalizeBlockResponse.TxResults[txIndex],
+		TxResultMerkleProof:         txResultProof,
+	}, nil
+}
+
+func (env *Environment) fetchBridgeCommitmentLeaves(start, end uint64) ([]ctypes.BridgeCommitmentLeaf, error) {
+
 	bridgeCommitmentLeaves := make([]ctypes.BridgeCommitmentLeaf, 0, end-start)
 	for height := start; height < end; height++ {
 
@@ -285,69 +348,40 @@ func (env *Environment) BridgeCommitment(_ *rpctypes.Context, start, end uint64)
 			return nil, fmt.Errorf("couldn't load block %d", height)
 		}
 
-		results, err := env.StateStore.LoadFinalizeBlockResponse(int64(height))
-		if err != nil {
-			return nil, err
+		// Load the next block to get the LastResultsHash since the hash is computed in the next block
+		nextBlock := env.BlockStore.LoadBlock(int64(height + 1))
+		if block == nil {
+			return nil, fmt.Errorf("couldn't load block %d", height+1)
 		}
-
-		//// Temp for viewing purposes
-		//txResultDeterministic := types.NewResults(results.TxResults)
-		//
-		//l := len(txResultDeterministic)
-		//bzs := make([]ctypes.ResultsLeaf, l)
-		//for i := 0; i < l; i++ {
-		//	bz, err := txResultDeterministic[i].Marshal()
-		//	if err != nil {
-		//		panic(err)
-		//	}
-		//	var data bytes.HexBytes
-		//	err = (&data).Unmarshal(bz)
-		//	if err != nil {
-		//		return nil, err
-		//	}
-		//	bzs[i] = ctypes.ResultsLeaf{Results: data}
-		//}
-
-		// Generate the root hash of the TxResult with encoded data (TODO This can be taken from next block)
-		txResultsRoot := state.TxResultsHash(results.TxResults)
-
-		// Encode the Leaf nodes
-		paddedHeight, err := To32PaddedHexBytes(height)
-		if err != nil {
-			return nil, err
-		}
-		encodedHeightAndDataHash := append(paddedHeight, block.Header.DataHash[:]...)
-		encodedAll := append(encodedHeightAndDataHash, txResultsRoot[:]...)
-		encodedLeavesNodes = append(encodedLeavesNodes, encodedAll)
 
 		bridgeCommitmentLeaves = append(bridgeCommitmentLeaves, ctypes.BridgeCommitmentLeaf{
 			Height:      height,
 			DataHash:    block.Header.DataHash,
-			ResultsHash: txResultsRoot,
+			ResultsHash: nextBlock.Header.LastResultsHash,
 		})
 	}
 
-	root := merkle.HashFromByteSlices(encodedLeavesNodes)
-	return &ctypes.ResultBridgeCommitment{
-		BridgeCommitmentHash:      root,
-		BridgeCommitmentHashBytes: root,
-	}, nil
+	return bridgeCommitmentLeaves, nil
 }
 
-//
-//func (env *Environment) TxResultInclusionProof(
-//	_ *rpctypes.Context,
-//	height int64,
-//	txIndexInBlock int64,
-//) (*ctypes.ResultTxResultInclusionProof, error) {
-//	blockResponse, err := env.StateStore.LoadFinalizeBlockResponse(int64(height))
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	proof := types.NewResults(blockResponse.TxResults).ProveResult(int(txIndexInBlock))
-//	return &ctypes.ResultTxResultInclusionProof{Proof: proof}, nil
-//}
+func (env *Environment) encodeBridgeCommitmentLeaves(leaves []ctypes.BridgeCommitmentLeaf) ([][]byte, error) {
+
+	encodedLeaves := make([][]byte, 0, len(leaves))
+	for _, leaf := range leaves {
+
+		// Pad to match `abi.encode` on Ethereum
+		paddedHeight, err := To32PaddedHexBytes(leaf.Height)
+		if err != nil {
+			return nil, err
+		}
+		encodedHeightAndDataHash := append(paddedHeight, leaf.DataHash...)
+		encodedLeaf := append(encodedHeightAndDataHash, leaf.ResultsHash...)
+
+		encodedLeaves = append(encodedLeaves, encodedLeaf)
+	}
+
+	return encodedLeaves, nil
+}
 
 // To32PaddedHexBytes takes a number and returns its hex representation padded to 32 bytes.
 // Used to mimic the result of `abi.encode(number)` in Ethereum.

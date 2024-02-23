@@ -2,6 +2,7 @@ package coretypes
 
 import (
 	"encoding/json"
+	"github.com/cometbft/cometbft/crypto/merkle"
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
@@ -262,8 +263,7 @@ type BridgeCommitmentLeaf struct {
 }
 
 type ResultBridgeCommitment struct {
-	BridgeCommitmentHash      bytes.HexBytes `json:"bridge_commitment_hash"`
-	BridgeCommitmentHashBytes []byte         `json:"bridge_commitment_hash_bytes"`
+	BridgeCommitmentHash bytes.HexBytes `json:"bridge_commitment_hash"`
 }
 
 type ResultBridgeCommitmentInclusionProof struct {
@@ -275,21 +275,21 @@ type ResultBridgeCommitmentInclusionProof struct {
 
 	// BridgeCommitmentMerkleProof is the merkle proof to proof a BridgeCommitmentLeaf is in the BridgeCommitment
 	// merkle tree.
-	BridgeCommitmentMerkleProof BinaryMerkleProof `json:"bridge_commitment_merkle_proof"`
+	BridgeCommitmentMerkleProof merkle.Proof `json:"bridge_commitment_merkle_proof"`
 
 	// ------ Verify that a transaction was in TxResult
 
-	// TransactionEncoded is the encoded transaction which the inclusion proof is for.
-	TransactionEncoded bytes.HexBytes `json:"transaction_encoded"`
+	// ExecTxResult is the deterministic response of the queried transaction.
+	ExecTxResult abci.ExecTxResult `json:"transaction_encoded"`
 	// TxResultMerkleProof is the merkle proof to proof the result of a transaction if in the merkle tree.
-	TxResultMerkleProof BinaryMerkleProof `json:"tx_result_merkle_proof"`
+	TxResultMerkleProof merkle.Proof `json:"tx_result_merkle_proof"`
 }
 
-type BinaryMerkleProof struct {
-	// SideNodes is a list of side nodes to verify and calculate tree.
-	SideNodes []bytes.HexBytes `json:"side_nodes"`
-	// Key is the key of the leaf to verify.
-	Key uint64 `json:"key"`
-	// NumLeaves is the number of leaves in the tree
-	NumLeaves uint64 `json:"num_leaves"`
-}
+//type BinaryMerkleProof struct {
+//	// SideNodes is a list of side nodes to verify and calculate tree.
+//	SideNodes []bytes.HexBytes `json:"side_nodes"`
+//	// Key is the key of the leaf to verify.
+//	Key uint64 `json:"key"`
+//	// NumLeaves is the number of leaves in the tree
+//	NumLeaves uint64 `json:"num_leaves"`
+//}
