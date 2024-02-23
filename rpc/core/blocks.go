@@ -325,16 +325,21 @@ func (env *Environment) BridgeCommitmentInclusionProof(
 	if err != nil {
 		return nil, err
 	}
+
 	if int(txIndex) >= len(finalizeBlockResponse.TxResults) {
 		return nil, fmt.Errorf("transaction index not found %d", txIndex)
 	}
-	txResultProof := types.NewResults(finalizeBlockResponse.TxResults).ProveResult(int(txIndex))
+	deterministicTxResults := types.NewResults(finalizeBlockResponse.TxResults)
+	marshalledTxResult, err := deterministicTxResults[txIndex].Marshal()
+	if err != nil {
+		return nil, err
+	}
 
 	return &ctypes.ResultBridgeCommitmentInclusionProof{
 		BridgeCommitmentLeaf:        keyLeaf,
 		BridgeCommitmentMerkleProof: *proofs[height-int64(leaves[0].Height)],
-		ExecTxResult:                *finalizeBlockResponse.TxResults[txIndex],
-		TxResultMerkleProof:         txResultProof,
+		ExecTxResult:                marshalledTxResult,
+		TxResultMerkleProof:         deterministicTxResults.ProveResult(int(txIndex)),
 	}, nil
 }
 

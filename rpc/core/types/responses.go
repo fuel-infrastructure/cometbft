@@ -271,7 +271,7 @@ type ResultBridgeCommitmentInclusionProof struct {
 	// ------ Verify that a block was in BridgeCommitment
 
 	// BridgeCommitmentLeaf is a leaf node in the BridgeCommitment merkle.
-	BridgeCommitmentLeaf BridgeCommitmentLeaf `json:"bridge_commitment_Leaf"`
+	BridgeCommitmentLeaf BridgeCommitmentLeaf `json:"bridge_commitment_leaf"`
 
 	// BridgeCommitmentMerkleProof is the merkle proof to proof a BridgeCommitmentLeaf is in the BridgeCommitment
 	// merkle tree.
@@ -280,16 +280,7 @@ type ResultBridgeCommitmentInclusionProof struct {
 	// ------ Verify that a transaction was in TxResult
 
 	// ExecTxResult is the deterministic response of the queried transaction.
-	ExecTxResult abci.ExecTxResult `json:"transaction_encoded"`
+	ExecTxResult []byte `json:"exec_tx_result"`
 	// TxResultMerkleProof is the merkle proof to proof the result of a transaction if in the merkle tree.
 	TxResultMerkleProof merkle.Proof `json:"tx_result_merkle_proof"`
 }
-
-//type BinaryMerkleProof struct {
-//	// SideNodes is a list of side nodes to verify and calculate tree.
-//	SideNodes []bytes.HexBytes `json:"side_nodes"`
-//	// Key is the key of the leaf to verify.
-//	Key uint64 `json:"key"`
-//	// NumLeaves is the number of leaves in the tree
-//	NumLeaves uint64 `json:"num_leaves"`
-//}
