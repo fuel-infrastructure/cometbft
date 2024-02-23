@@ -2,7 +2,6 @@ package coretypes
 
 import (
 	"encoding/json"
-	"github.com/cometbft/cometbft/crypto/merkle"
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
@@ -275,12 +274,18 @@ type ResultBridgeCommitmentInclusionProof struct {
 
 	// BridgeCommitmentMerkleProof is the merkle proof to proof a BridgeCommitmentLeaf is in the BridgeCommitment
 	// merkle tree.
-	BridgeCommitmentMerkleProof merkle.Proof `json:"bridge_commitment_merkle_proof"`
+	BridgeCommitmentMerkleProof BinaryMerkleProof `json:"bridge_commitment_merkle_proof"`
 
 	// ------ Verify that a transaction was in TxResult
 
 	// ExecTxResult is the deterministic response of the queried transaction.
-	ExecTxResult []byte `json:"exec_tx_result"`
+	ExecTxResult bytes.HexBytes `json:"exec_tx_result"`
 	// TxResultMerkleProof is the merkle proof to proof the result of a transaction if in the merkle tree.
-	TxResultMerkleProof merkle.Proof `json:"tx_result_merkle_proof"`
+	TxResultMerkleProof BinaryMerkleProof `json:"tx_result_merkle_proof"`
+}
+
+type BinaryMerkleProof struct {
+	Total int64            `json:"total"` // Total number of items.
+	Index int64            `json:"index"` // Index of item to prove.
+	Aunts []bytes.HexBytes `json:"aunts"` // Hashes from leaf's sibling to a root's child.
 }

@@ -335,11 +335,33 @@ func (env *Environment) BridgeCommitmentInclusionProof(
 		return nil, err
 	}
 
+	// Convert to HexBytes
+	bcMerkleProof := *proofs[height-int64(leaves[0].Height)]
+	bcAunts := make([]bytes.HexBytes, len(bcMerkleProof.Aunts))
+	for i := range bcMerkleProof.Aunts {
+		bcAunts[i] = bcMerkleProof.Aunts[i]
+	}
+
+	// Convert to HexBytes
+	txMerkleProof := deterministicTxResults.ProveResult(int(txIndex))
+	txAunts := make([]bytes.HexBytes, len(txMerkleProof.Aunts))
+	for i := range txMerkleProof.Aunts {
+		txAunts[i] = txMerkleProof.Aunts[i]
+	}
+
 	return &ctypes.ResultBridgeCommitmentInclusionProof{
-		BridgeCommitmentLeaf:        keyLeaf,
-		BridgeCommitmentMerkleProof: *proofs[height-int64(leaves[0].Height)],
-		ExecTxResult:                marshalledTxResult,
-		TxResultMerkleProof:         deterministicTxResults.ProveResult(int(txIndex)),
+		BridgeCommitmentLeaf: keyLeaf,
+		BridgeCommitmentMerkleProof: ctypes.BinaryMerkleProof{
+			Total: bcMerkleProof.Total,
+			Index: bcMerkleProof.Index,
+			Aunts: bcAunts,
+		},
+		ExecTxResult: marshalledTxResult,
+		TxResultMerkleProof: ctypes.BinaryMerkleProof{
+			Total: txMerkleProof.Total,
+			Index: txMerkleProof.Index,
+			Aunts: txAunts,
+		},
 	}, nil
 }
 
