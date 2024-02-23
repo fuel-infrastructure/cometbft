@@ -285,7 +285,8 @@ type ResultBridgeCommitmentInclusionProof struct {
 }
 
 type BinaryMerkleProof struct {
-	Total int64            `json:"total"` // Total number of items.
-	Index int64            `json:"index"` // Index of item to prove.
-	Aunts []bytes.HexBytes `json:"aunts"` // Hashes from leaf's sibling to a root's child.
+	Total    int64            `json:"total"`     // Total number of items.
+	Index    int64            `json:"index"`     // Index of item to prove.
+	LeafHash bytes.HexBytes   `json:"leaf_hash"` // Hash of item value.
+	Aunts    []bytes.HexBytes `json:"aunts"`     // Hashes from leaf's sibling to a root's child.
 }

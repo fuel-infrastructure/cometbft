@@ -352,15 +352,17 @@ func (env *Environment) BridgeCommitmentInclusionProof(
 	return &ctypes.ResultBridgeCommitmentInclusionProof{
 		BridgeCommitmentLeaf: keyLeaf,
 		BridgeCommitmentMerkleProof: ctypes.BinaryMerkleProof{
-			Total: bcMerkleProof.Total,
-			Index: bcMerkleProof.Index,
-			Aunts: bcAunts,
+			Total:    bcMerkleProof.Total,
+			Index:    bcMerkleProof.Index,
+			LeafHash: bcMerkleProof.LeafHash,
+			Aunts:    bcAunts,
 		},
 		ExecTxResult: marshalledTxResult,
 		TxResultMerkleProof: ctypes.BinaryMerkleProof{
-			Total: txMerkleProof.Total,
-			Index: txMerkleProof.Index,
-			Aunts: txAunts,
+			Total:    txMerkleProof.Total,
+			Index:    txMerkleProof.Index,
+			LeafHash: txMerkleProof.LeafHash,
+			Aunts:    txAunts,
 		},
 	}, nil
 }
