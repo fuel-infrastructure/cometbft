@@ -207,7 +207,7 @@ func (env *Environment) latestUncommittedHeight() int64 {
 // validateBridgeCommitmentRange runs basic checks on the asc sorted list of
 // heights that will be used successively to generate bridge commitments over
 // the defined set of height/s.
-func (env *Environment) validateBridgeCommitmentRange(start uint64, end uint64) error {
+func (env *Environment) validateBridgeCommitmentRange(start, end uint64) error {
 	if start == 0 {
 		return fmt.Errorf("the first block is 0")
 	}
@@ -221,10 +221,10 @@ func (env *Environment) validateBridgeCommitmentRange(start uint64, end uint64) 
 	if heightsRange > uint64(BridgeCommitmentBlocksLimit) {
 		return fmt.Errorf("the query exceeds the limit of allowed blocks %d", BridgeCommitmentBlocksLimit)
 	}
-	// The bridge commitment range is end exclusive.
-	if end > uint64(env.BlockStore.Height())+1 {
+	// The bridge commitment range is not end exclusive since Results Hash is calculated in the next block.
+	if end > uint64(env.BlockStore.Height()) {
 		return fmt.Errorf(
-			"end block %d is higher than current chain height %d",
+			"end block %d needs to be higher than current chain height %d + 1",
 			end,
 			env.BlockStore.Height(),
 		)
@@ -234,7 +234,7 @@ func (env *Environment) validateBridgeCommitmentRange(start uint64, end uint64) 
 
 // validateBridgeCommitmentInclusionProofRequest validates the request to generate a bridge commitment
 // inclusion proof.
-func (env *Environment) validateBridgeCommitmentInclusionProofRequest(height uint64, start uint64, end uint64) error {
+func (env *Environment) validateBridgeCommitmentInclusionProofRequest(height, start, end uint64) error {
 	err := env.validateBridgeCommitmentRange(start, end)
 	if err != nil {
 		return err
