@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/cometbft/cometbft/state/mocks"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -79,4 +80,32 @@ func TestPaginationPerPage(t *testing.T) {
 	// nil case
 	p := env.validatePerPage(nil)
 	assert.Equal(t, defaultPerPage, p)
+}
+
+func TestValidateBridgeCommitmentRange(t *testing.T) {
+	cases := []struct {
+		start    uint64
+		end      uint64
+		expError string
+	}{
+		{5, 1, "last block is smaller than first block"},
+		{0, 5, "the first block is 0"},
+		{1, 1002, "the query exceeds the limit of allowed blocks 1000"},
+		{1, 1, "cannot create the bridge commitments for an empty set of blocks"},
+		{5, 105, "end block 105 is higher than current chain height 100"},
+		{5, 95, ""}, // Valid
+	}
+	env := &Environment{}
+	mockStore := &mocks.BlockStore{}
+	mockStore.On("Height").Return(int64(100))
+	env.BlockStore = mockStore
+
+	for _, c := range cases {
+		err := env.validateBridgeCommitmentRange(c.start, c.end)
+		if c.expError != "" {
+			assert.EqualError(t, err, c.expError)
+		} else {
+			assert.Nil(t, err)
+		}
+	}
 }

@@ -211,15 +211,15 @@ func (env *Environment) validateBridgeCommitmentRange(start uint64, end uint64) 
 	if start == 0 {
 		return fmt.Errorf("the first block is 0")
 	}
-	heightsRange := end - start
-	if heightsRange > uint64(BridgeCommitmentBlocksLimit) {
-		return fmt.Errorf("the query exceeds the limit of allowed blocks %d", BridgeCommitmentBlocksLimit)
+	if start > end {
+		return fmt.Errorf("last block is smaller than first block")
 	}
+	heightsRange := end - start
 	if heightsRange == 0 {
 		return fmt.Errorf("cannot create the bridge commitments for an empty set of blocks")
 	}
-	if start >= end {
-		return fmt.Errorf("last block is smaller than first block")
+	if heightsRange > uint64(BridgeCommitmentBlocksLimit) {
+		return fmt.Errorf("the query exceeds the limit of allowed blocks %d", BridgeCommitmentBlocksLimit)
 	}
 	// The bridge commitment range is end exclusive.
 	if end > uint64(env.BlockStore.Height())+1 {
