@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/hex"
 	"fmt"
 	"testing"
 
@@ -113,4 +114,100 @@ func TestBlockResults(t *testing.T) {
 			assert.Equal(t, tc.wantRes, res)
 		}
 	}
+}
+
+func TestPadBytes(t *testing.T) {
+	input, err := hex.DecodeString("01")
+	assert.NoError(t, err)
+	expInput, err := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000001")
+	assert.NoError(t, err)
+	errInput, err := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000001")
+	assert.NoError(t, err)
+
+	testCases := []struct {
+		input     []byte
+		length    int
+		expOutput []byte
+		expError  string
+	}{
+		{errInput, 16, expInput, "cannot pad bytes because length of bytes array: 32 is greater than given length: 16"},
+		{input, 32, expInput, ""}, // Valid
+	}
+
+	for _, c := range testCases {
+		output, err := padBytes(c.input, c.length)
+		if c.expError != "" {
+			assert.EqualError(t, err, c.expError)
+		} else {
+			assert.NoError(t, err)
+			assert.Equal(t, c.expOutput, output)
+		}
+	}
+}
+
+func TestTo32PaddedHexBytes(t *testing.T) {
+	expOutput, err := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000001")
+	assert.NoError(t, err)
+
+	expOutput2, err := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000105")
+	assert.NoError(t, err)
+
+	testCases := []struct {
+		number    uint64
+		expOutput []byte
+		expError  string
+	}{
+		{1, expOutput, ""},    // Valid
+		{104, expOutput2, ""}, // Valid
+	}
+
+	for _, c := range testCases {
+		output, err := To32PaddedHexBytes(c.number)
+		if c.expError != "" {
+			assert.EqualError(t, err, c.expError)
+		} else {
+			assert.NoError(t, err)
+			assert.Equal(t, c.expOutput, output)
+		}
+	}
+}
+
+func TestEncodeBridgeCommitment(t *testing.T) {
+	resultsHash1, err := hex.DecodeString("2769641FA3FCF635E78A3DCDAA1FB88B6ED68369100E4E5C3703A54E834C08FE")
+	assert.NoError(t, err)
+	resultsHash2, err := hex.DecodeString("63B766303EF0EA13BA3D9E281C2E498F76294FEDEEAA32E3D7F1B517BE9CD956")
+	assert.NoError(t, err)
+
+	inputs := []ctypes.BridgeCommitmentLeaf{
+		{
+			Height:      1,
+			ResultsHash: resultsHash1,
+		},
+		{
+			Height:      2,
+			ResultsHash: resultsHash2,
+		},
+	}
+
+	expectedEncoding, err := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000001" +
+		"2769641FA3FCF635E78A3DCDAA1FB88B6ED68369100E4E5C3703A54E834C08FE")
+	require.NoError(t, err)
+	expectedEncoding2, err := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000002" +
+		"63B766303EF0EA13BA3D9E281C2E498F76294FEDEEAA32E3D7F1B517BE9CD956")
+	require.NoError(t, err)
+
+	output := make([][]byte, 0, 2)
+	output = append(output, expectedEncoding)
+	output = append(output, expectedEncoding2)
+
+	env := &Environment{}
+	actualEncoding, err := env.encodeBridgeCommitment(inputs)
+	require.NoError(t, err)
+	require.NotNil(t, actualEncoding)
+
+	// Check that the length of packed bridge commitment leaves is correct
+	assert.Equal(t, len(actualEncoding[0]), 64)
+	assert.Equal(t, len(actualEncoding[1]), 64)
+
+	assert.Equal(t, output, actualEncoding)
 }
