@@ -2,6 +2,7 @@ package coretypes
 
 import (
 	"encoding/json"
+	"github.com/cometbft/cometbft/crypto/merkle"
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
@@ -253,4 +254,30 @@ type ResultEvent struct {
 	Query  string              `json:"query"`
 	Data   types.TMEventData   `json:"data"`
 	Events map[string][]string `json:"events"`
+}
+
+// BridgeCommitmentLeaf the leaf to form a BridgeCommitment.
+type BridgeCommitmentLeaf struct {
+	Height uint64 `json:"height"`
+	// This is the results hash of the specified height. CometBFT computes this hash at (Height + 1) in the
+	// LastResultsHash variable in the block header.
+	// Reference: https://github.com/cometbft/cometbft/blob/719b64156aaa3cb89add29d053439060f8e420dd/proto/cometbft/types/v1/types.proto#L67
+	ResultsHash bytes.HexBytes `json:"results_hash"`
+}
+
+// ResultBridgeCommitment contains the merkle root of successive BridgeCommitmentLeaf.
+type ResultBridgeCommitment struct {
+	BridgeCommitment bytes.HexBytes `json:"bridge_commitment"`
+}
+
+// ResultBridgeCommitmentInclusionProof contains merkle proofs to show that a transaction was used to construct the
+// BridgeCommitment merkle root.
+type ResultBridgeCommitmentInclusionProof struct {
+
+	// BridgeCommitmentMerkleProof is a merkle proof proving a BridgeCommitmentLeaf was used to
+	// construct the BridgeCommitment merkle root.
+	BridgeCommitmentMerkleProof merkle.Proof `json:"bridge_commitment_proof"`
+
+	// ResultsMerkleProof is a merkle proof proving a transaction response was used to form the ResultsHash merkle root.
+	ResultsMerkleProof merkle.Proof `json:"results_proof"`
 }
