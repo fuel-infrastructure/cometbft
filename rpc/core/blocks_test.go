@@ -251,11 +251,51 @@ func TestFetchBridgeCommitmentLeaves(t *testing.T) {
 	assert.EqualError(t, err, "couldn't load block 103")
 }
 
-//func TestBridgeCommitment(t *testing.T) {
-//
-//	env := &Environment{}
-//	mockStore := &mocks.BlockStore{}
-//	mockStore.On("Height").Return(int64(1000))
-//	env.BlockStore = mockStore
-//
-//}
+func TestBridgeCommitment(t *testing.T) {
+	/**
+	BridgeCommitmentLeaf memory bridgeCommitmentLeaf = BridgeCommitmentLeaf(100, hex"2F082AF1B4E2E26251EC6F658AF6528BC8D28BA8AB1F89D0108E0CD8187D6006");
+	bytes32 height100Hash = sha256(abi.encodePacked(
+		bytes1(0x00), // LEAF_PREFIX
+		abi.encode(bridgeCommitmentLeaf)
+	));
+	BridgeCommitmentLeaf memory bridgeCommitmentLeaf2 = BridgeCommitmentLeaf(101, hex"52F3AC2AD13294B90F8B35B238A3F4B11707F18CD4DB0620A17EACE59C04DC89");
+	bytes32 height101Hash = sha256(abi.encodePacked(
+		bytes1(0x00), // LEAF_PREFIX
+		abi.encode(bridgeCommitmentLeaf2)
+	));
+	bytes32 bridgeCommitmentRoot = sha256(abi.encodePacked(
+		bytes1(0x01), // NODE_PREFIX
+		height100Hash,
+		height101Hash
+	));
+	console.logBytes32(bridgeCommitmentRoot);
+	*/
+	// Root calculated using the above.
+	bridgeCommitmentRoot, err := hex.DecodeString("6a9fc4ba63cc5a1bcc97fd79dc7304c64bd530d82d88fb4e4a234a35776be209")
+	assert.NoError(t, err)
+
+	height100ResultsHash, err := hex.DecodeString("2F082AF1B4E2E26251EC6F658AF6528BC8D28BA8AB1F89D0108E0CD8187D6006")
+	assert.NoError(t, err)
+
+	height101ResultsHash, err := hex.DecodeString("52F3AC2AD13294B90F8B35B238A3F4B11707F18CD4DB0620A17EACE59C04DC89")
+	assert.NoError(t, err)
+
+	env := &Environment{}
+	mockStore := &mocks.BlockStore{}
+	mockStore.On("Height").Return(int64(1000))
+	mockStore.On("LoadBlock", int64(101)).Return(&types.Block{
+		Header: types.Header{
+			LastResultsHash: height100ResultsHash,
+		},
+	})
+	mockStore.On("LoadBlock", int64(102)).Return(&types.Block{
+		Header: types.Header{
+			LastResultsHash: height101ResultsHash,
+		},
+	})
+	env.BlockStore = mockStore
+
+	actualResult, err := env.BridgeCommitment(nil, 100, 102)
+	assert.NoError(t, err)
+	assert.Equal(t, bytes.HexBytes(bridgeCommitmentRoot), actualResult.BridgeCommitment)
+}

@@ -288,7 +288,6 @@ func (env *Environment) BridgeCommitment(_ *rpctypes.Context,
 	if err != nil {
 		return nil, err
 	}
-	// Generate merkle root.
 	root := merkle.HashFromByteSlices(encodedLeaves)
 
 	return &ctypes.ResultBridgeCommitment{
@@ -380,6 +379,7 @@ func (env *Environment) encodeBridgeCommitment(leaves []ctypes.BridgeCommitmentL
 		if err != nil {
 			return nil, err
 		}
+
 		encodedLeaf := append(paddedHeight, leaf.ResultsHash...)
 		encodedLeaves = append(encodedLeaves, encodedLeaf)
 	}
