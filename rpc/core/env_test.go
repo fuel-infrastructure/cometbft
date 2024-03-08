@@ -92,8 +92,8 @@ func TestValidateBridgeCommitmentRange(t *testing.T) {
 		{0, 5, "the first block is 0"},
 		{1, 1002, "the query exceeds the limit of allowed blocks 1000"},
 		{1, 1, "cannot create the bridge commitments for an empty set of blocks"},
-		{5, 105, "end block 105 needs to be higher than current chain height 100 + 1"},
-		{5, 101, "end block 101 needs to be higher than current chain height 100 + 1"},
+		{5, 102, "end block 102 is higher than current chain height 100"},
+		{5, 101, ""}, // Valid since block 101 is not inclusive
 		{5, 100, ""}, // Valid
 	}
 	env := &Environment{}
