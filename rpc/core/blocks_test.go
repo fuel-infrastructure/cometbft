@@ -151,7 +151,7 @@ func TestTo32PaddedHexBytes(t *testing.T) {
 	expOutput, err := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000001")
 	assert.NoError(t, err)
 
-	expOutput2, err := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000105")
+	expOutput2, err := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000068")
 	assert.NoError(t, err)
 
 	testCases := []struct {
@@ -165,6 +165,7 @@ func TestTo32PaddedHexBytes(t *testing.T) {
 
 	for _, c := range testCases {
 		output, err := To32PaddedHexBytes(c.number)
+
 		if c.expError != "" {
 			assert.EqualError(t, err, c.expError)
 		} else {
@@ -218,12 +219,12 @@ func TestFetchBridgeCommitmentLeaves(t *testing.T) {
 
 	env := &Environment{}
 	mockStore := &mocks.BlockStore{}
-	mockStore.On("LoadBlock", int64(101)).Return(&types.Block{
+	mockStore.On("LoadBlock", int64(100)).Return(&types.Block{
 		Header: types.Header{
 			LastResultsHash: bytes.HexBytes("63B766303EF0EA13BA3D9E281C2E498F76294FEDEEAA32E3D7F1B517BE9CD956"),
 		},
 	})
-	mockStore.On("LoadBlock", int64(102)).Return(&types.Block{
+	mockStore.On("LoadBlock", int64(101)).Return(&types.Block{
 		Header: types.Header{
 			LastResultsHash: bytes.HexBytes("2769641FA3FCF635E78A3DCDAA1FB88B6ED68369100E4E5C3703A54E834C08FE"),
 		},
@@ -232,11 +233,11 @@ func TestFetchBridgeCommitmentLeaves(t *testing.T) {
 
 	expectedLeaves := []ctypes.BridgeCommitmentLeaf{
 		{
-			Height:          100, // Height 100 but getting 101 LastResultsHash
+			Height:          100,
 			LastResultsHash: bytes.HexBytes("63B766303EF0EA13BA3D9E281C2E498F76294FEDEEAA32E3D7F1B517BE9CD956"),
 		},
 		{
-			Height:          101, // Height 101 but getting 102 LastResultsHash
+			Height:          101,
 			LastResultsHash: bytes.HexBytes("2769641FA3FCF635E78A3DCDAA1FB88B6ED68369100E4E5C3703A54E834C08FE"),
 		},
 	}
@@ -246,9 +247,9 @@ func TestFetchBridgeCommitmentLeaves(t *testing.T) {
 	assert.Equal(t, expectedLeaves, actualLeaves)
 
 	// Block not found case
-	mockStore.On("LoadBlock", int64(103)).Return(nil)
+	mockStore.On("LoadBlock", int64(102)).Return(nil)
 	_, err = env.fetchBridgeCommitmentLeaves(100, 103)
-	assert.EqualError(t, err, "couldn't load block 103")
+	assert.EqualError(t, err, "couldn't load block 102")
 }
 
 func TestBridgeCommitment(t *testing.T) {
@@ -283,12 +284,12 @@ func TestBridgeCommitment(t *testing.T) {
 	env := &Environment{}
 	mockStore := &mocks.BlockStore{}
 	mockStore.On("Height").Return(int64(1000))
-	mockStore.On("LoadBlock", int64(101)).Return(&types.Block{
+	mockStore.On("LoadBlock", int64(100)).Return(&types.Block{
 		Header: types.Header{
 			LastResultsHash: height100ResultsHash,
 		},
 	})
-	mockStore.On("LoadBlock", int64(102)).Return(&types.Block{
+	mockStore.On("LoadBlock", int64(101)).Return(&types.Block{
 		Header: types.Header{
 			LastResultsHash: height101ResultsHash,
 		},
