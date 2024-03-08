@@ -221,10 +221,10 @@ func (env *Environment) validateBridgeCommitmentRange(start, end uint64) error {
 	if heightsRange > uint64(BridgeCommitmentBlocksLimit) {
 		return fmt.Errorf("the query exceeds the limit of allowed blocks %d", BridgeCommitmentBlocksLimit)
 	}
-	// The bridge commitment range is not end exclusive since Results Hash is calculated in the next block.
-	if end > uint64(env.BlockStore.Height()) {
+	// The bridge commitment range is end exclusive.
+	if end > uint64(env.BlockStore.Height())+1 {
 		return fmt.Errorf(
-			"end block %d needs to be higher than current chain height %d + 1",
+			"end block %d is higher than current chain height %d",
 			end,
 			env.BlockStore.Height(),
 		)

@@ -324,11 +324,21 @@ func (env *Environment) BridgeCommitmentInclusionProof(
 	_, proofs := merkle.ProofsFromByteSlices(encodedLeaves)
 	bcProof := proofs[height-int64(leaves[0].Height)]
 
-	// Load the transactions that composed the LastResultsHash.
-	finalizeBlockResponse, err := env.StateStore.LoadFinalizeBlockResponse(height)
+	// Load the transactions that composed the LastResultsHash at height.
+	finalizeBlockResponse, err := env.StateStore.LoadFinalizeBlockResponse(height - 1)
 	if err != nil {
 		return nil, err
 	}
+
+	// If there are no transactions in the block it is not possible to generate an inclusion proof for a
+	// transaction response.
+	if len(finalizeBlockResponse.TxResults) == 0 && int(txIndex) == 0 {
+		return &ctypes.ResultBridgeCommitmentInclusionProof{
+			BridgeCommitmentMerkleProof: *bcProof,
+		}, nil
+	}
+
+	// Sanity check.
 	if int(txIndex) >= len(finalizeBlockResponse.TxResults) {
 		return nil, fmt.Errorf("transaction index too high %d", txIndex)
 	}
@@ -341,7 +351,7 @@ func (env *Environment) BridgeCommitmentInclusionProof(
 
 	return &ctypes.ResultBridgeCommitmentInclusionProof{
 		BridgeCommitmentMerkleProof: *bcProof,
-		ResultsMerkleProof:          txMerkleProof,
+		LastResultsMerkleProof:      txMerkleProof,
 	}, nil
 }
 
@@ -352,22 +362,21 @@ func (env *Environment) fetchBridgeCommitmentLeaves(start, end uint64) ([]ctypes
 	bridgeCommitmentLeaves := make([]ctypes.BridgeCommitmentLeaf, 0, end-start)
 	for height := start; height < end; height++ {
 
-		// Loading the next block to get the LastResultsHash since the hash is computed in the next block.
-		nextBlock := env.BlockStore.LoadBlock(int64(height + 1))
-		if nextBlock == nil {
-			return nil, fmt.Errorf("couldn't load block %d", height+1)
+		currentBlock := env.BlockStore.LoadBlock(int64(height))
+		if currentBlock == nil {
+			return nil, fmt.Errorf("couldn't load block %d", height)
 		}
 
 		bridgeCommitmentLeaves = append(bridgeCommitmentLeaves, ctypes.BridgeCommitmentLeaf{
-			Height:      height,
-			ResultsHash: nextBlock.Header.LastResultsHash,
+			Height:          height,
+			LastResultsHash: currentBlock.Header.LastResultsHash,
 		})
 	}
 
 	return bridgeCommitmentLeaves, nil
 }
 
-// encodeBridgeCommitment takes a height and a result hash, and returns the equivalent of
+// encodeBridgeCommitment takes a height and a last result hash, and returns the equivalent of
 // `abi.encode(...)` in Ethereum. To match `abi.encode(...)`, the height is padding to 32 bytes.
 func (env *Environment) encodeBridgeCommitment(leaves []ctypes.BridgeCommitmentLeaf) ([][]byte, error) {
 
@@ -380,7 +389,7 @@ func (env *Environment) encodeBridgeCommitment(leaves []ctypes.BridgeCommitmentL
 			return nil, err
 		}
 
-		encodedLeaf := append(paddedHeight, leaf.ResultsHash...)
+		encodedLeaf := append(paddedHeight, leaf.LastResultsHash...)
 		encodedLeaves = append(encodedLeaves, encodedLeaf)
 	}
 

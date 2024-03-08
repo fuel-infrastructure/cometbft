@@ -182,12 +182,12 @@ func TestEncodeBridgeCommitment(t *testing.T) {
 
 	inputs := []ctypes.BridgeCommitmentLeaf{
 		{
-			Height:      1,
-			ResultsHash: resultsHash1,
+			Height:          1,
+			LastResultsHash: resultsHash1,
 		},
 		{
-			Height:      2,
-			ResultsHash: resultsHash2,
+			Height:          2,
+			LastResultsHash: resultsHash2,
 		},
 	}
 
@@ -232,12 +232,12 @@ func TestFetchBridgeCommitmentLeaves(t *testing.T) {
 
 	expectedLeaves := []ctypes.BridgeCommitmentLeaf{
 		{
-			Height:      100, // Height 100 but getting 101 LastResultsHash
-			ResultsHash: bytes.HexBytes("63B766303EF0EA13BA3D9E281C2E498F76294FEDEEAA32E3D7F1B517BE9CD956"),
+			Height:          100, // Height 100 but getting 101 LastResultsHash
+			LastResultsHash: bytes.HexBytes("63B766303EF0EA13BA3D9E281C2E498F76294FEDEEAA32E3D7F1B517BE9CD956"),
 		},
 		{
-			Height:      101, // Height 101 but getting 102 LastResultsHash
-			ResultsHash: bytes.HexBytes("2769641FA3FCF635E78A3DCDAA1FB88B6ED68369100E4E5C3703A54E834C08FE"),
+			Height:          101, // Height 101 but getting 102 LastResultsHash
+			LastResultsHash: bytes.HexBytes("2769641FA3FCF635E78A3DCDAA1FB88B6ED68369100E4E5C3703A54E834C08FE"),
 		},
 	}
 

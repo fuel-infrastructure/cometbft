@@ -259,10 +259,12 @@ type ResultEvent struct {
 // BridgeCommitmentLeaf the leaf to form a BridgeCommitment.
 type BridgeCommitmentLeaf struct {
 	Height uint64 `json:"height"`
-	// This is the results hash of the specified height. CometBFT computes this hash at (Height + 1) in the
-	// LastResultsHash variable in the block header.
-	// Reference: https://github.com/cometbft/cometbft/blob/719b64156aaa3cb89add29d053439060f8e420dd/proto/cometbft/types/v1/types.proto#L67
-	ResultsHash bytes.HexBytes `json:"results_hash"`
+
+	// The ResultsHash of blocks is derived at (Height + 1) in the LastResultsHash variable in the Tendermint
+	// block header, reference:
+	// https://github.com/cometbft/cometbft/blob/719b64156aaa3cb89add29d053439060f8e420dd/proto/cometbft/types/v1/types.proto#L67
+	// Thus to reconstruct this root at Height X, you would need the transactions results from Height X - 1.
+	LastResultsHash bytes.HexBytes `json:"last_results_hash"`
 }
 
 // ResultBridgeCommitment contains the merkle root of successive BridgeCommitmentLeaf.
@@ -278,6 +280,6 @@ type ResultBridgeCommitmentInclusionProof struct {
 	// construct the BridgeCommitment merkle root.
 	BridgeCommitmentMerkleProof merkle.Proof `json:"bridge_commitment_proof"`
 
-	// ResultsMerkleProof is a merkle proof proving a transaction response was used to form the ResultsHash merkle root.
-	ResultsMerkleProof merkle.Proof `json:"results_proof"`
+	// LastResultsMerkleProof is a merkle proof proving a transaction response was used to form the LastResultsHash merkle root.
+	LastResultsMerkleProof merkle.Proof `json:"last_results_proof"`
 }
