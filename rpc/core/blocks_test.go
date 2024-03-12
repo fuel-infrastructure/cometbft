@@ -176,19 +176,19 @@ func TestTo32PaddedHexBytes(t *testing.T) {
 }
 
 func TestEncodeBridgeCommitment(t *testing.T) {
-	resultsHash1, err := hex.DecodeString("2769641FA3FCF635E78A3DCDAA1FB88B6ED68369100E4E5C3703A54E834C08FE")
+	lastResultsHash1, err := hex.DecodeString("2769641FA3FCF635E78A3DCDAA1FB88B6ED68369100E4E5C3703A54E834C08FE")
 	assert.NoError(t, err)
-	resultsHash2, err := hex.DecodeString("63B766303EF0EA13BA3D9E281C2E498F76294FEDEEAA32E3D7F1B517BE9CD956")
+	lastResultsHash2, err := hex.DecodeString("63B766303EF0EA13BA3D9E281C2E498F76294FEDEEAA32E3D7F1B517BE9CD956")
 	assert.NoError(t, err)
 
 	inputs := []ctypes.BridgeCommitmentLeaf{
 		{
 			Height:          1,
-			LastResultsHash: resultsHash1,
+			LastResultsHash: lastResultsHash1,
 		},
 		{
 			Height:          2,
-			LastResultsHash: resultsHash2,
+			LastResultsHash: lastResultsHash2,
 		},
 	}
 
@@ -299,4 +299,59 @@ func TestBridgeCommitment(t *testing.T) {
 	actualResult, err := env.BridgeCommitment(nil, 100, 102)
 	assert.NoError(t, err)
 	assert.Equal(t, bytes.HexBytes(bridgeCommitmentRoot), actualResult.BridgeCommitment)
+}
+
+func TestBridgeCommitmentInclusionProof(t *testing.T) {
+	// Generate the last results hash in the block's header, transactions are already deterministic
+	txResultsH10 := []*abci.ExecTxResult{
+		{Code: 0, Data: []byte("one")},
+		{Code: 0, Data: []byte("two")},
+	}
+
+	dummyStateStore := &mocks.Store{}
+	dummyStateStore.On("LoadFinalizeBlockResponse", int64(10)).Return(&abci.ResponseFinalizeBlock{
+		TxResults: txResultsH10,
+	}, nil)
+	txResultsH1Root := sm.TxResultsHash(txResultsH10)
+
+	// Mock the block containing the last results hash, which is height + 1
+	dummyBlockStore := &mocks.BlockStore{}
+	dummyBlockStore.On("Height").Return(int64(20))
+	dummyBlockStore.On("LoadBlock", int64(11)).Return(&types.Block{
+		Header: types.Header{
+			LastResultsHash: txResultsH1Root,
+		},
+	})
+
+	env := &Environment{}
+	env.BlockStore = dummyBlockStore
+	env.StateStore = dummyStateStore
+
+	// Generate the bridge commitment root. Here we are using the transactions from Height 10 and their merkle root
+	// is found in the last results hash in block header 11
+	bcRoot, err := env.BridgeCommitment(nil, 11, 12)
+	assert.NoError(t, err)
+
+	// Get the inclusion proofs
+	proofs, err := env.BridgeCommitmentInclusionProof(nil, 11, 1, 11, 12)
+	assert.NoError(t, err)
+
+	// First, proof the transaction is included in the last results hash on the next block
+	tx1Bz, err := txResultsH10[1].Marshal()
+	assert.NoError(t, err)
+
+	err = proofs.LastResultsMerkleProof.Verify(txResultsH1Root, tx1Bz)
+	assert.NoError(t, err)
+
+	// Second, proof that the block containing the last results hash was included in the bridge commitment
+	leafBz, err := env.encodeBridgeCommitment([]ctypes.BridgeCommitmentLeaf{
+		{
+			Height:          11,
+			LastResultsHash: txResultsH1Root,
+		},
+	})
+	assert.NoError(t, err)
+
+	err = proofs.BridgeCommitmentMerkleProof.Verify(bcRoot.BridgeCommitment, leafBz[0])
+	assert.NoError(t, err)
 }
