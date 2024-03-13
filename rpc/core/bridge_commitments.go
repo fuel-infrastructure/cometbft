@@ -111,14 +111,14 @@ func (env *Environment) fetchBridgeCommitmentLeaves(start, end uint64) ([]ctypes
 	bridgeCommitmentLeaves := make([]ctypes.BridgeCommitmentLeaf, 0, end-start)
 	for height := start; height < end; height++ {
 
-		currentBlock := env.BlockStore.LoadBlock(int64(height))
-		if currentBlock == nil {
+		block := env.BlockStore.LoadBlock(int64(height))
+		if block == nil {
 			return nil, fmt.Errorf("couldn't load block %d", height)
 		}
 
 		bridgeCommitmentLeaves = append(bridgeCommitmentLeaves, ctypes.BridgeCommitmentLeaf{
 			Height:          height,
-			LastResultsHash: currentBlock.Header.LastResultsHash,
+			LastResultsHash: block.Header.LastResultsHash,
 		})
 	}
 
