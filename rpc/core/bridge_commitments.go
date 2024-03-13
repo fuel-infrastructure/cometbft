@@ -14,6 +14,7 @@ import (
 const (
 	// BridgeCommitmentBlocksLimit is the limit to the number of blocks we can generate a bridge commitment for.
 	// This limits the ZK prover time required to compute.
+	// Inspiration: https://github.com/celestiaorg/celestia-core/blob/v1.35.0-tm-v0.34.29/pkg/consts/consts.go#L43-L44
 	BridgeCommitmentBlocksLimit = 1000
 )
 
