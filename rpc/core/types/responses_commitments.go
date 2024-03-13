@@ -10,9 +10,8 @@ type BridgeCommitmentLeaf struct {
 	Height uint64 `json:"height"`
 
 	// The ResultsHash of blocks is derived at (Height + 1) in the LastResultsHash variable in the Tendermint
-	// block header, reference:
-	// https://github.com/cometbft/cometbft/blob/719b64156aaa3cb89add29d053439060f8e420dd/proto/cometbft/types/v1/types.proto#L67
-	// Thus to reconstruct this root at Height X, you would need the transactions results from Height X - 1.
+	// block header, ref: https://github.com/cometbft/cometbft/blob/v0.38.5/proto/tendermint/types/types.proto#L66.
+	// Thus, to reconstruct this root at Height X, you would need the transactions results from Height X - 1.
 	LastResultsHash bytes.HexBytes `json:"last_results_hash"`
 }
 
