@@ -147,6 +147,7 @@ func (env *Environment) encodeBridgeCommitment(leaves []ctypes.BridgeCommitmentL
 
 // to32PaddedHexBytes takes a number and returns its hex representation padded to 32 bytes.
 // Used to mimic the result of `abi.encode(number)` in Ethereum.
+// Ref: https://docs.soliditylang.org/en/develop/abi-spec.html
 func to32PaddedHexBytes(number uint64) ([]byte, error) {
 	hexRepresentation := strconv.FormatUint(number, 16)
 	// Make sure hex representation has even length.
