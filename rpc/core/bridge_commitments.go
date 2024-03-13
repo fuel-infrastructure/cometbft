@@ -188,9 +188,8 @@ func padBytes(byt []byte, length int) ([]byte, error) {
 
 // ----------------------------------------------
 
-// validateBridgeCommitmentRange runs basic checks on the asc sorted list of
-// heights that will be used successively to generate bridge commitments over
-// the defined set of height/s.
+// validateBridgeCommitmentRange runs basic checks on the range of heights
+// that will be used to generate bridge commitments from successive blocks.
 func (env *Environment) validateBridgeCommitmentRange(start, end uint64) error {
 	if start == 0 {
 		return fmt.Errorf("the first block is 0")
