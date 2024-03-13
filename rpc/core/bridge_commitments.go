@@ -93,7 +93,7 @@ func (env *Environment) BridgeCommitmentInclusionProof(
 	}
 
 	// Remove non-deterministic fields from ExecTxResult responses to match LastResultsHash from the
-	// header computation.
+	// header computation. Ref: https://github.com/cometbft/cometbft/blob/v0.38.5/state/store.go#L412
 	deterministicTxResults := types.NewResults(finalizeBlockResponse.TxResults)
 	// Get the merkle proof for this transaction.
 	txMerkleProof := deterministicTxResults.ProveResult(int(txIndex))
