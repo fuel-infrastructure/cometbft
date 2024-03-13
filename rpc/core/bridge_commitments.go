@@ -79,8 +79,8 @@ func (env *Environment) BridgeCommitmentInclusionProof(
 		return nil, err
 	}
 
-	// If there are no transactions in the block it is not possible to generate an inclusion proof for a
-	// transaction response.
+	// If there are no transactions in the block it is not possible to generate an inclusion proof for a transaction
+	// response. However, we can still return the proof showing that the block was included in the bridge commitment.
 	if len(finalizeBlockResponse.TxResults) == 0 && int(txIndex) == 0 {
 		return &ctypes.ResultBridgeCommitmentInclusionProof{
 			BridgeCommitmentMerkleProof: *bcProof,
