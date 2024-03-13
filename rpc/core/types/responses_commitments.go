@@ -21,8 +21,8 @@ type ResultBridgeCommitment struct {
 	BridgeCommitment bytes.HexBytes `json:"bridge_commitment"`
 }
 
-// ResultBridgeCommitmentInclusionProof contains merkle proofs to show that a transaction was used to construct the
-// BridgeCommitment merkle root.
+// ResultBridgeCommitmentInclusionProof contains merkle proofs to show that a
+// transaction response was used to construct the BridgeCommitment merkle root.
 type ResultBridgeCommitmentInclusionProof struct {
 
 	// BridgeCommitmentMerkleProof is a merkle proof proving a BridgeCommitmentLeaf was used to
