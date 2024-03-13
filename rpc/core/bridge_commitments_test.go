@@ -60,7 +60,7 @@ func TestTo32PaddedHexBytes(t *testing.T) {
 	}
 
 	for _, c := range testCases {
-		output, err := To32PaddedHexBytes(c.number)
+		output, err := to32PaddedHexBytes(c.number)
 
 		if c.expError != "" {
 			assert.EqualError(t, err, c.expError)

@@ -133,7 +133,7 @@ func (env *Environment) encodeBridgeCommitment(leaves []ctypes.BridgeCommitmentL
 	for _, leaf := range leaves {
 
 		// Pad to match `abi.encode` on Ethereum.
-		paddedHeight, err := To32PaddedHexBytes(leaf.Height)
+		paddedHeight, err := to32PaddedHexBytes(leaf.Height)
 		if err != nil {
 			return nil, err
 		}
@@ -145,9 +145,9 @@ func (env *Environment) encodeBridgeCommitment(leaves []ctypes.BridgeCommitmentL
 	return encodedLeaves, nil
 }
 
-// To32PaddedHexBytes takes a number and returns its hex representation padded to 32 bytes.
+// to32PaddedHexBytes takes a number and returns its hex representation padded to 32 bytes.
 // Used to mimic the result of `abi.encode(number)` in Ethereum.
-func To32PaddedHexBytes(number uint64) ([]byte, error) {
+func to32PaddedHexBytes(number uint64) ([]byte, error) {
 	hexRepresentation := strconv.FormatUint(number, 16)
 	// Make sure hex representation has even length.
 	// The `strconv.FormatUint` can return odd length hex encodings.
