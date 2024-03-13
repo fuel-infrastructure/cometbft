@@ -185,6 +185,8 @@ func padBytes(byt []byte, length int) ([]byte, error) {
 	return tmp, nil
 }
 
+// ----------------------------------------------
+
 // validateBridgeCommitmentRange runs basic checks on the asc sorted list of
 // heights that will be used successively to generate bridge commitments over
 // the defined set of height/s.
