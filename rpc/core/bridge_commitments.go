@@ -64,7 +64,7 @@ func (env *Environment) BridgeCommitmentInclusionProof(
 	if err != nil {
 		return nil, err
 	}
-	// Encode data to match solidity side.
+	// Encode data to match solidity `abi.encode`.
 	encodedLeaves, err := env.encodeBridgeCommitment(leaves)
 	if err != nil {
 		return nil, err
