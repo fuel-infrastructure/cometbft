@@ -126,7 +126,7 @@ func (env *Environment) fetchBridgeCommitmentLeaves(start, end uint64) ([]ctypes
 }
 
 // encodeBridgeCommitment takes a height and a last result hash, and returns the equivalent of
-// `abi.encode(...)` in Ethereum. To match `abi.encode(...)`, the height is padding to 32 bytes.
+// `abi.encode(...)` in Ethereum. To match `abi.encode(...)`, the height is padded to 32 bytes.
 func (env *Environment) encodeBridgeCommitment(leaves []ctypes.BridgeCommitmentLeaf) ([][]byte, error) {
 
 	encodedLeaves := make([][]byte, 0, len(leaves))
