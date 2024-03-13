@@ -45,8 +45,8 @@ func (env *Environment) BridgeCommitment(_ *rpctypes.Context,
 	}, nil
 }
 
-// BridgeCommitmentInclusionProof creates two inclusion proofs to verify that a transaction is included
-// in a BridgeCommitment. Users can also verify any data in the transactions responses for data
+// BridgeCommitmentInclusionProof creates two inclusion proofs to verify that a transaction response is
+// included in a BridgeCommitment. Users can also verify any data in the transactions responses for data
 // availability. Users need to provide the height and the transaction index that the inclusion proof is
 // for. They also need to provide the indexes of the start and end blocks for which the BridgeCommitment
 // merkle root is constructed from. The range for BridgeCommitment is end exclusive.
