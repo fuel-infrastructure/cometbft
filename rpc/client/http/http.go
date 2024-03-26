@@ -579,6 +579,48 @@ func (c *baseRPCClient) Validators(
 	return result, nil
 }
 
+func (c *baseRPCClient) BridgeCommitment(
+	ctx context.Context,
+	start uint64,
+	end uint64,
+) (*ctypes.ResultBridgeCommitment, error) {
+	result := new(ctypes.ResultBridgeCommitment)
+	params := map[string]interface{}{
+		"start": start,
+		"end":   end,
+	}
+
+	_, err := c.caller.Call(ctx, "bridge_commitment", params, result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (c *baseRPCClient) BridgeCommitmentInclusionProof(
+	ctx context.Context,
+	height,
+	txIndex int64,
+	start uint64,
+	end uint64,
+) (*ctypes.ResultBridgeCommitmentInclusionProof, error) {
+	result := new(ctypes.ResultBridgeCommitmentInclusionProof)
+	params := map[string]interface{}{
+		"height":  height,
+		"txIndex": txIndex,
+		"start":   start,
+		"end":     end,
+	}
+
+	_, err := c.caller.Call(ctx, "bridge_commitment_inclusion_proof", params, result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func (c *baseRPCClient) BroadcastEvidence(
 	ctx context.Context,
 	ev types.Evidence,

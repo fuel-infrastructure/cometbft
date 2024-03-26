@@ -178,6 +178,24 @@ func (c Client) Validators(_ context.Context, height *int64, page, perPage *int)
 	return c.env.Validators(&rpctypes.Context{}, height, page, perPage)
 }
 
+func (c Client) BridgeCommitment(
+	ctx context.Context,
+	start uint64,
+	end uint64,
+) (*ctypes.ResultBridgeCommitment, error) {
+	return c.env.BridgeCommitment(&rpctypes.Context{}, start, end)
+}
+
+func (c Client) BridgeCommitmentInclusionProof(
+	ctx context.Context,
+	height,
+	txIndex int64,
+	start uint64,
+	end uint64,
+) (*ctypes.ResultBridgeCommitmentInclusionProof, error) {
+	return c.env.BridgeCommitmentInclusionProof(&rpctypes.Context{}, height, txIndex, start, end)
+}
+
 func (c Client) BroadcastEvidence(_ context.Context, ev types.Evidence) (*ctypes.ResultBroadcastEvidence, error) {
 	return c.env.BroadcastEvidence(&rpctypes.Context{}, ev)
 }

@@ -91,6 +91,15 @@ type SignClient interface {
 		page, perPage *int,
 		orderBy string,
 	) (*ctypes.ResultBlockSearch, error)
+
+	BridgeCommitment(ctx context.Context, start, end uint64) (*ctypes.ResultBridgeCommitment, error)
+	BridgeCommitmentInclusionProof(
+		ctx context.Context,
+		height,
+		txIndex int64,
+		start,
+		end uint64,
+	) (*ctypes.ResultBridgeCommitmentInclusionProof, error)
 }
 
 // HistoryClient provides access to data from genesis to now in large chunks.

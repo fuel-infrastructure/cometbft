@@ -208,6 +208,24 @@ func (c *Local) BlockSearch(
 	return c.env.BlockSearch(c.ctx, query, page, perPage, orderBy)
 }
 
+func (c *Local) BridgeCommitment(
+	_ context.Context,
+	start uint64,
+	end uint64,
+) (*ctypes.ResultBridgeCommitment, error) {
+	return c.env.BridgeCommitment(c.ctx, start, end)
+}
+
+func (c *Local) BridgeCommitmentInclusionProof(
+	_ context.Context,
+	height,
+	txIndex int64,
+	start uint64,
+	end uint64,
+) (*ctypes.ResultBridgeCommitmentInclusionProof, error) {
+	return c.env.BridgeCommitmentInclusionProof(c.ctx, height, txIndex, start, end)
+}
+
 func (c *Local) BroadcastEvidence(_ context.Context, ev types.Evidence) (*ctypes.ResultBroadcastEvidence, error) {
 	return c.env.BroadcastEvidence(c.ctx, ev)
 }
