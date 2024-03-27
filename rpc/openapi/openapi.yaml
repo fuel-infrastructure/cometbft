@@ -867,6 +867,108 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /bridge_commitment:
+    get:
+      summary: Get a bridge commitment merkle root over a range of blocks.
+      operationId: bridge_commitment
+      parameters:
+        - in: query
+          name: start
+          description: "the start block of the range of blocks"
+          required: true
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - in: query
+          name: end
+          description: "the end block of the range of blocks"
+          required: true
+          schema:
+            type: integer
+            default: 100
+            example: 100
+      tags:
+        - Info
+      description: |
+
+        Collects the transactions results roots over a provided ordered range of blocks, and then creates a new merkle root.
+
+        The range is end exclusive.
+      responses:
+        "200":
+          description: bridge commitment merkle root
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BridgeCommitmentResponse"
+        "500":
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /bridge_commitment_inclusion_proof:
+    get:
+      summary: Creates two merkle proof for a bridge commitment and a last results hash of one of the blocks
+      description: |
+        Creates two inclusion proofs to verify that a transaction response is included in a BridgeCommitment.
+
+        Users can also verify any data in the transactions responses for data availability.
+
+        Users need to provide the height and the transaction index that the inclusion proof is for.
+        They also need to provide the indexes of the start and end blocks for which the BridgeCommitment merkle root is constructed from.
+
+        The range for BridgeCommitment is end exclusive.
+      operationId: bridge_commitment_inclusion_proof
+      parameters:
+        - in: query
+          name: height
+          description: "the height of the block to prove"
+          required: true
+          schema:
+            type: integer
+            default: 5
+            example: 5
+        - in: query
+          name: tx_index
+          description: "the tx index inside a block"
+          required: true
+          schema:
+            type: integer
+            default: 0
+            example: 1
+        - in: query
+          name: start
+          description: "the start block of the range of blocks"
+          required: true
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - in: query
+          name: end
+          description: "the end block of the range of blocks"
+          required: true
+          schema:
+            type: integer
+            default: 100
+            example: 100
+      tags:
+        - Info
+      responses:
+        "200":
+          description: two merkle proofs of the height and transaction to the bridge commitment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BridgeCommitmentProofResponse"
+        "500":
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /tx_search:
     get:
       summary: Search for transactions
@@ -2205,6 +2307,99 @@ components:
           #              nullable: true
           #            example:
           #              - "gAPwYl3uCjCMTXENChSMnIkb5ZpYHBKIZqecFEV2tuZr7xIUA75/FmYq9WymsOBJ0XSJ8yV8zmQKMIxNcQ0KFIyciRvlmlgcEohmp5wURXa25mvvEhQbrvwbvlNiT+Yjr86G+YQNx7kRVgowjE1xDQoUjJyJG+WaWBwSiGannBRFdrbma+8SFK2m+1oxgILuQLO55n8mWfnbIzyPCjCMTXENChSMnIkb5ZpYHBKIZqecFEV2tuZr7xIUQNGfkmhTNMis4j+dyMDIWXdIPiYKMIxNcQ0KFIyciRvlmlgcEohmp5wURXa25mvvEhS8sL0D0wwgGCItQwVowak5YB38KRIUCg4KBXVhdG9tEgUxMDA1NBDoxRgaagom61rphyECn8x7emhhKdRCB2io7aS/6Cpuq5NbVqbODmqOT3jWw6kSQKUresk+d+Gw0BhjiggTsu8+1voW+VlDCQ1GRYnMaFOHXhyFv7BCLhFWxLxHSAYT8a5XqoMayosZf9mANKdXArA="
+          type: object
+
+    BridgeCommitmentResponse:
+      type: object
+      required:
+        - "jsonrpc"
+        - "id"
+        - "result"
+      properties:
+        jsonrpc:
+          type: string
+          example: "2.0"
+        id:
+          type: integer
+          example: 0
+        result:
+          required:
+            - "BridgeCommitment"
+          properties:
+            BridgeCommitment:
+              type: string
+              example: "63B766303EF0EA13BA3D9E281C2E498F76294FEDEEAA32E3D7F1B517BE9CD956"
+              description: the commitment is hex encoded
+          type: object
+
+    BridgeCommitmentProofResponse:
+      type: object
+      required:
+        - "jsonrpc"
+        - "id"
+        - "result"
+      properties:
+        jsonrpc:
+          type: string
+          example: "2.0"
+        id:
+          type: integer
+          example: 0
+        result:
+          required:
+            - "BridgeCommitmentMerkleProof"
+            - "LastResultsMerkleProof"
+          properties:
+            BridgeCommitmentMerkleProof:
+              required:
+                - "total"
+                - "index"
+                - "leaf_hash"
+                - "aunts"
+              properties:
+                total:
+                  type: string
+                  example: "4"
+                index:
+                  type: string
+                  example: "2"
+                leaf_hash:
+                  type: string
+                  example: "3f8nyqfIye5xNzafYu79ILrv7QlR13Ma/wyY8RbZzq0="
+                  description: the leaf hash is base64 encoded
+                aunts:
+                  type: array
+                  items:
+                    type: string
+                  example:
+                    - "lY7t5rI30O0Ju1YdQIM8/CtQz2/v7fqOhUzqSXVnO3c="
+                  description: the aunts are base64 encoded
+              type: object
+            LastResultsMerkleProof:
+              required:
+                - "total"
+                - "index"
+                - "leaf_hash"
+                - "aunts"
+              properties:
+                total:
+                  type: string
+                  example: "4"
+                index:
+                  type: string
+                  example: "2"
+                leaf_hash:
+                  type: string
+                  example: "lWEFVbRnJzv+a2iUgRWupXyAPK1VSwQrjdeRe0DEbhM="
+                  description: the leaf hash is base64 encoded
+                aunts:
+                  type: array
+                  items:
+                    type: string
+                  example:
+                    - "IjGQk83R0n6x6wzEMl1JZQeCgtdzgF/YymzX9N3PDsk="
+                  description: the aunts are base64 encoded
+              type: object
           type: object
 
     UnconfirmedTransactionsResponse:

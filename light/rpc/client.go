@@ -542,6 +542,24 @@ func (c *Client) Validators(
 		Total:       totalCount}, nil
 }
 
+func (c *Client) BridgeCommitment(
+	ctx context.Context,
+	start uint64,
+	end uint64,
+) (*ctypes.ResultBridgeCommitment, error) {
+	return c.next.BridgeCommitment(ctx, start, end)
+}
+
+func (c *Client) BridgeCommitmentInclusionProof(
+	ctx context.Context,
+	height,
+	txIndex int64,
+	start uint64,
+	end uint64,
+) (*ctypes.ResultBridgeCommitmentInclusionProof, error) {
+	return c.next.BridgeCommitmentInclusionProof(ctx, height, txIndex, start, end)
+}
+
 func (c *Client) BroadcastEvidence(ctx context.Context, ev types.Evidence) (*ctypes.ResultBroadcastEvidence, error) {
 	return c.next.BroadcastEvidence(ctx, ev)
 }
