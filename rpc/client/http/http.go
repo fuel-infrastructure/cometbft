@@ -607,10 +607,10 @@ func (c *baseRPCClient) BridgeCommitmentInclusionProof(
 ) (*ctypes.ResultBridgeCommitmentInclusionProof, error) {
 	result := new(ctypes.ResultBridgeCommitmentInclusionProof)
 	params := map[string]interface{}{
-		"height":  height,
-		"txIndex": txIndex,
-		"start":   start,
-		"end":     end,
+		"height":   height,
+		"tx_index": txIndex,
+		"start":    start,
+		"end":      end,
 	}
 
 	_, err := c.caller.Call(ctx, "bridge_commitment_inclusion_proof", params, result)
