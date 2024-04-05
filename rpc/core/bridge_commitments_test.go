@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/crypto/merkle"
 	"github.com/cometbft/cometbft/libs/bytes"
 	ctypes "github.com/cometbft/cometbft/rpc/core/types"
 	sm "github.com/cometbft/cometbft/state"
@@ -203,19 +204,29 @@ func TestBridgeCommitmentInclusionProof(t *testing.T) {
 		{Code: 0, Data: []byte("one")},
 		{Code: 0, Data: []byte("two")},
 	}
+	txResultsH11 := []*abci.ExecTxResult(nil)
 
 	dummyStateStore := &mocks.Store{}
 	dummyStateStore.On("LoadFinalizeBlockResponse", int64(10)).Return(&abci.ResponseFinalizeBlock{
 		TxResults: txResultsH10,
 	}, nil)
-	txResultsH1Root := sm.TxResultsHash(txResultsH10)
+	dummyStateStore.On("LoadFinalizeBlockResponse", int64(11)).Return(&abci.ResponseFinalizeBlock{
+		TxResults: txResultsH11,
+	}, nil)
+	txResultsH10Root := sm.TxResultsHash(txResultsH10)
+	txResultsH11Root := sm.TxResultsHash(txResultsH11)
 
 	// Mock the block containing the last results hash, which is height + 1
 	dummyBlockStore := &mocks.BlockStore{}
 	dummyBlockStore.On("Height").Return(int64(20))
 	dummyBlockStore.On("LoadBlock", int64(11)).Return(&types.Block{
 		Header: types.Header{
-			LastResultsHash: txResultsH1Root,
+			LastResultsHash: txResultsH10Root,
+		},
+	})
+	dummyBlockStore.On("LoadBlock", int64(12)).Return(&types.Block{
+		Header: types.Header{
+			LastResultsHash: txResultsH11Root,
 		},
 	})
 
@@ -223,27 +234,65 @@ func TestBridgeCommitmentInclusionProof(t *testing.T) {
 	env.BlockStore = dummyBlockStore
 	env.StateStore = dummyStateStore
 
+	// Cover some invalid inclusion proof requests
+	_, err := env.BridgeCommitmentInclusionProof(nil, 11, 1, 11, 1012)
+	assert.ErrorContains(t, err, "the query exceeds the limit of allowed blocks 1000")
+	_, err = env.BridgeCommitmentInclusionProof(nil, 21, 1, 21, 22)
+	assert.ErrorContains(t, err, "end block 22 is higher than current chain height 20")
+	_, err = env.BridgeCommitmentInclusionProof(nil, 13, 1, 11, 12)
+	assert.ErrorContains(t, err, "height 13 should be in the end exclusive interval first_block 11 last_block 12")
+	_, err = env.BridgeCommitmentInclusionProof(nil, 12, 1, 11, 13)
+	assert.ErrorContains(t, err, "transaction index too high 1")
+
+	// ---------------- Inclusion proof for block with transactions
+
 	// Generate the bridge commitment root. Here we are using the transactions from Height 10 and their merkle root
 	// is found in the last results hash in block header 11
 	bcRoot, err := env.BridgeCommitment(nil, 11, 12)
 	assert.NoError(t, err)
 
-	// Get the inclusion proofs
+	// Get the inclusion proofs for transaction
 	proofs, err := env.BridgeCommitmentInclusionProof(nil, 11, 1, 11, 12)
 	assert.NoError(t, err)
 
-	// First, proof the transaction is included in the last results hash on the next block
+	// First, prove the transaction is included in the last results hash on the next block
 	tx1Bz, err := txResultsH10[1].Marshal()
 	assert.NoError(t, err)
 
-	err = proofs.LastResultsMerkleProof.Verify(txResultsH1Root, tx1Bz)
+	err = proofs.LastResultsMerkleProof.Verify(txResultsH10Root, tx1Bz)
 	assert.NoError(t, err)
 
-	// Second, proof that the block containing the last results hash was included in the bridge commitment
+	// Second, prove that the block containing the last results hash was included in the bridge commitment
 	leafBz, err := env.encodeBridgeCommitment([]ctypes.BridgeCommitmentLeaf{
 		{
 			Height:          11,
-			LastResultsHash: txResultsH1Root,
+			LastResultsHash: txResultsH10Root,
+		},
+	})
+	assert.NoError(t, err)
+
+	err = proofs.BridgeCommitmentMerkleProof.Verify(bcRoot.BridgeCommitment, leafBz[0])
+	assert.NoError(t, err)
+
+	// ---------------- Inclusion proof for block without transactions
+
+	// Generate the bridge commitment root. Here we are using the transactions from Height 11 (i.e. no transactions)
+	// and their merkle root is found in the last results hash in block header 12.
+	bcRoot, err = env.BridgeCommitment(nil, 12, 13)
+	assert.NoError(t, err)
+
+	// Get the inclusion proof without LastResultsMerkleProof
+	proofs, err = env.BridgeCommitmentInclusionProof(nil, 12, 0, 12, 13)
+	assert.NoError(t, err)
+
+	// First, check that LastResultsMerkleProof is blank
+	assert.Equal(t, merkle.Proof{}, proofs.LastResultsMerkleProof)
+
+	// Second, prove that the block containing the last results hash was included in the bridge commitment
+	leafBz, err = env.encodeBridgeCommitment([]ctypes.BridgeCommitmentLeaf{
+		{
+			Height:          12,
+			LastResultsHash: txResultsH11Root,
 		},
 	})
 	assert.NoError(t, err)
@@ -290,6 +339,7 @@ func TestValidateBridgeCommitmentInclusionProofRequest(t *testing.T) {
 	}{
 		{150, 1, 100, "height 150 should be in the end exclusive interval first_block 1 last_block 100"},
 		{100, 1, 100, "height 100 should be in the end exclusive interval first_block 1 last_block 100"},
+		{100, 1, 1002, "the query exceeds the limit of allowed blocks 1000"},
 		{99, 1, 100, ""}, // Valid
 	}
 	env := &Environment{}
