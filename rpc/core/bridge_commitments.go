@@ -98,10 +98,16 @@ func (env *Environment) BridgeCommitmentInclusionProof(
 	deterministicTxResults := types.NewResults(finalizeBlockResponse.TxResults)
 	// Get the merkle proof for this transaction.
 	txMerkleProof := deterministicTxResults.ProveResult(int(txIndex))
+	// Get the marshalled transaction result
+	txResultMarshalled, err := deterministicTxResults[txIndex].Marshal()
+	if err != nil {
+		return nil, err
+	}
 
 	return &ctypes.ResultBridgeCommitmentInclusionProof{
 		BridgeCommitmentMerkleProof: *bcProof,
 		LastResultsMerkleProof:      txMerkleProof,
+		TxResultMarshalled:          txResultMarshalled,
 	}, nil
 }
 

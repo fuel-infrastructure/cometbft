@@ -2349,6 +2349,7 @@ components:
           required:
             - "BridgeCommitmentMerkleProof"
             - "LastResultsMerkleProof"
+            - "TxResultMarshalled"
           properties:
             BridgeCommitmentMerkleProof:
               required:
@@ -2400,6 +2401,10 @@ components:
                     - "IjGQk83R0n6x6wzEMl1JZQeCgtdzgF/YymzX9N3PDsk="
                   description: the aunts are base64 encoded
               type: object
+            TxResultMarshalled:
+              type: string
+              example: "Eq4BEqsBCjMvZnVlbHNlcXVlbmNlci5icmlkZ2UuTXNnV2l0aGRyYXdUb0V0aGVyZXVtUmVzcG9uc2USdAoCNDYSNGZ1ZWxzZXF1ZW5jZXIxdnRmenJrNmY0bTZreHQ2ZWh5cXQ5ajVzdTVodmN6NXEzZG1sc20aKjB4MkI0Y2U4MTNmMWU4MTQwMDRjN0I4MDZiQzMxQjRGZTA2NTBDNkZBOCIMCgV1dGVzdBIDMTAwKKbqCDC07gY="
+              description: the marshalled transaction result is base64 encoded
           type: object
 
     UnconfirmedTransactionsResponse:

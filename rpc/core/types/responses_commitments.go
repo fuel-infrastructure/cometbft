@@ -28,6 +28,10 @@ type ResultBridgeCommitmentInclusionProof struct {
 	// construct the BridgeCommitment merkle root.
 	BridgeCommitmentMerkleProof merkle.Proof `json:"bridge_commitment_proof"`
 
-	// LastResultsMerkleProof is a merkle proof proving a transaction response was used to form the LastResultsHash merkle root.
+	// LastResultsMerkleProof is a merkle proof proving a transaction response was used to form
+	// the LastResultsHash merkle root.
 	LastResultsMerkleProof merkle.Proof `json:"last_results_proof"`
+
+	// TxResultMarshalled is the marshalled deterministic form of the queried transaction's result.
+	TxResultMarshalled []byte
 }
