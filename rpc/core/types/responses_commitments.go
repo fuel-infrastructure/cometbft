@@ -22,6 +22,7 @@ type ResultBridgeCommitment struct {
 
 // ResultBridgeCommitmentInclusionProof contains merkle proofs to show that a
 // transaction response was used to construct the BridgeCommitment merkle root.
+// It also includes the marshalled deterministic transaction result.
 type ResultBridgeCommitmentInclusionProof struct {
 
 	// BridgeCommitmentMerkleProof is a merkle proof proving a BridgeCommitmentLeaf was used to
