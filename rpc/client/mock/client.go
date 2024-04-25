@@ -179,7 +179,7 @@ func (c Client) Validators(_ context.Context, height *int64, page, perPage *int)
 }
 
 func (c Client) BridgeCommitment(
-	ctx context.Context,
+	_ context.Context,
 	start uint64,
 	end uint64,
 ) (*ctypes.ResultBridgeCommitment, error) {
@@ -187,7 +187,7 @@ func (c Client) BridgeCommitment(
 }
 
 func (c Client) BridgeCommitmentInclusionProof(
-	ctx context.Context,
+	_ context.Context,
 	height,
 	txIndex int64,
 	start uint64,

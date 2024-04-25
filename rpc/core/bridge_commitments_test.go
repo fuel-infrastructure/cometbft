@@ -218,7 +218,7 @@ func TestBridgeCommitmentInclusionProof(t *testing.T) {
 
 	// Mock the block containing the last results hash, which is height + 1
 	dummyBlockStore := &mocks.BlockStore{}
-	dummyBlockStore.On("Height").Return(int64(20))
+	dummyBlockStore.On("Height").Return(int64(1035))
 	dummyBlockStore.On("LoadBlock", int64(11)).Return(&types.Block{
 		Header: types.Header{
 			LastResultsHash: txResultsH10Root,
@@ -235,10 +235,10 @@ func TestBridgeCommitmentInclusionProof(t *testing.T) {
 	env.StateStore = dummyStateStore
 
 	// Cover some invalid inclusion proof requests
-	_, err := env.BridgeCommitmentInclusionProof(nil, 11, 1, 11, 1012)
-	assert.ErrorContains(t, err, "the query exceeds the limit of allowed blocks 1000")
-	_, err = env.BridgeCommitmentInclusionProof(nil, 21, 1, 21, 22)
-	assert.ErrorContains(t, err, "end block 22 is higher than current chain height 20")
+	_, err := env.BridgeCommitmentInclusionProof(nil, 11, 1, 11, 1036)
+	assert.ErrorContains(t, err, "the query exceeds the limit of allowed blocks 1024")
+	_, err = env.BridgeCommitmentInclusionProof(nil, 13, 1, 13, 1037)
+	assert.ErrorContains(t, err, "end block 1037 is higher than current chain height 1035") // 1036 would pass since end block is exclusive
 	_, err = env.BridgeCommitmentInclusionProof(nil, 13, 1, 11, 12)
 	assert.ErrorContains(t, err, "height 13 should be in the end exclusive interval first_block 11 last_block 12")
 	_, err = env.BridgeCommitmentInclusionProof(nil, 12, 1, 11, 13)
@@ -255,14 +255,17 @@ func TestBridgeCommitmentInclusionProof(t *testing.T) {
 	proofs, err := env.BridgeCommitmentInclusionProof(nil, 11, 1, 11, 12)
 	assert.NoError(t, err)
 
-	// First, prove the transaction is included in the last results hash on the next block
+	// 1. Prove the transaction is included in the last results hash on the next block
 	tx1Bz, err := txResultsH10[1].Marshal()
 	assert.NoError(t, err)
 
-	err = proofs.LastResultsMerkleProof.Verify(txResultsH10Root, tx1Bz)
+	err = proofs.LastResultsMerkleProof.ToMerkleProof().Verify(txResultsH10Root, tx1Bz)
 	assert.NoError(t, err)
 
-	// Second, prove that the block containing the last results hash was included in the bridge commitment
+	// 2. Prove the transaction is included
+	assert.EqualValues(t, tx1Bz, proofs.TxResultMarshalled)
+
+	// 3. Prove that the block containing the last results hash was included in the bridge commitment
 	leafBz, err := env.encodeBridgeCommitment([]ctypes.BridgeCommitmentLeaf{
 		{
 			Height:          11,
@@ -271,8 +274,16 @@ func TestBridgeCommitmentInclusionProof(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	err = proofs.BridgeCommitmentMerkleProof.Verify(bcRoot.BridgeCommitment, leafBz[0])
+	err = proofs.BridgeCommitmentMerkleProof.ToMerkleProof().Verify(bcRoot.BridgeCommitment, leafBz[0])
 	assert.NoError(t, err)
+
+	// 4. Prove that the last results hash containing the transaction was included as a bridge commitment leaf
+	assert.EqualValues(t, txResultsH10Root, proofs.BridgeCommitmentLeaf.LastResultsHash)
+	assert.EqualValues(t, 11, proofs.BridgeCommitmentLeaf.Height)
+
+	// 5. As a sanity check, ensure that the last results hash is the root of the LastResultsMerkleProof
+	lastResultsMerkleProofRoot := proofs.LastResultsMerkleProof.ToMerkleProof().ComputeRootHash()
+	assert.EqualValues(t, lastResultsMerkleProofRoot, proofs.BridgeCommitmentLeaf.LastResultsHash)
 
 	// ---------------- Inclusion proof for block without transactions
 
@@ -285,10 +296,13 @@ func TestBridgeCommitmentInclusionProof(t *testing.T) {
 	proofs, err = env.BridgeCommitmentInclusionProof(nil, 12, 0, 12, 13)
 	assert.NoError(t, err)
 
-	// First, check that LastResultsMerkleProof is blank
-	assert.Equal(t, merkle.Proof{}, proofs.LastResultsMerkleProof)
+	// 1. Check that LastResultsMerkleProof is blank
+	assert.Equal(t, merkle.Proof{}, *proofs.LastResultsMerkleProof.ToMerkleProof())
 
-	// Second, prove that the block containing the last results hash was included in the bridge commitment
+	// 2. Check that TxResultMarshalled is blank
+	assert.Empty(t, proofs.TxResultMarshalled)
+
+	// 3. Prove that the block containing the last results hash was included in the bridge commitment
 	leafBz, err = env.encodeBridgeCommitment([]ctypes.BridgeCommitmentLeaf{
 		{
 			Height:          12,
@@ -297,8 +311,12 @@ func TestBridgeCommitmentInclusionProof(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	err = proofs.BridgeCommitmentMerkleProof.Verify(bcRoot.BridgeCommitment, leafBz[0])
+	err = proofs.BridgeCommitmentMerkleProof.ToMerkleProof().Verify(bcRoot.BridgeCommitment, leafBz[0])
 	assert.NoError(t, err)
+
+	// 4. Prove that the last results hash containing no transactions was included as a bridge commitment leaf
+	assert.EqualValues(t, txResultsH11Root, proofs.BridgeCommitmentLeaf.LastResultsHash)
+	assert.EqualValues(t, 12, proofs.BridgeCommitmentLeaf.Height)
 }
 
 func TestValidateBridgeCommitmentRange(t *testing.T) {
@@ -309,7 +327,7 @@ func TestValidateBridgeCommitmentRange(t *testing.T) {
 	}{
 		{5, 1, "last block is smaller than first block"},
 		{0, 5, "the first block is 0"},
-		{1, 1002, "the query exceeds the limit of allowed blocks 1000"},
+		{1, 1026, "the query exceeds the limit of allowed blocks 1024"},
 		{1, 1, "cannot create the bridge commitments for an empty set of blocks"},
 		{5, 102, "end block 102 is higher than current chain height 100"},
 		{5, 101, ""}, // Valid since block 101 is not inclusive
@@ -339,7 +357,7 @@ func TestValidateBridgeCommitmentInclusionProofRequest(t *testing.T) {
 	}{
 		{150, 1, 100, "height 150 should be in the end exclusive interval first_block 1 last_block 100"},
 		{100, 1, 100, "height 100 should be in the end exclusive interval first_block 1 last_block 100"},
-		{100, 1, 1002, "the query exceeds the limit of allowed blocks 1000"},
+		{100, 1, 1026, "the query exceeds the limit of allowed blocks 1024"},
 		{99, 1, 100, ""}, // Valid
 	}
 	env := &Environment{}

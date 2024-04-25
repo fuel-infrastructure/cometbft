@@ -65,14 +65,22 @@ func (env *Environment) BridgeCommitmentInclusionProof(
 	if err != nil {
 		return nil, err
 	}
+
+	// Get the relevant index within the specified range of blocks.
+	// e.g. for block 1500 in 1000 to 2000, the index is 1500-1000 = 500
+	blockIndex := height - int64(leaves[0].Height)
+
 	// Encode data to match solidity `abi.encode`.
 	encodedLeaves, err := env.encodeBridgeCommitment(leaves)
 	if err != nil {
 		return nil, err
 	}
-	// Get proofs of the BridgeCommitment leaves.
+	// Get the relevant proof of the BridgeCommitment leaves.
 	_, proofs := merkle.ProofsFromByteSlices(encodedLeaves)
-	bcProof := proofs[height-int64(leaves[0].Height)]
+	bcProof := proofs[blockIndex]
+
+	// Get the relevant BridgeCommitmentLeaf.
+	bcLeaf := leaves[blockIndex]
 
 	// Load the transactions that composed the LastResultsHash at height.
 	finalizeBlockResponse, err := env.StateStore.LoadFinalizeBlockResponse(height - 1)
@@ -84,7 +92,8 @@ func (env *Environment) BridgeCommitmentInclusionProof(
 	// response. However, we can still return the proof showing that the block was included in the bridge commitment.
 	if len(finalizeBlockResponse.TxResults) == 0 && int(txIndex) == 0 {
 		return &ctypes.ResultBridgeCommitmentInclusionProof{
-			BridgeCommitmentMerkleProof: *bcProof,
+			BridgeCommitmentMerkleProof: ctypes.NewHexMerkleProof(*bcProof),
+			BridgeCommitmentLeaf:        bcLeaf,
 		}, nil
 	}
 
@@ -98,10 +107,17 @@ func (env *Environment) BridgeCommitmentInclusionProof(
 	deterministicTxResults := types.NewResults(finalizeBlockResponse.TxResults)
 	// Get the merkle proof for this transaction.
 	txMerkleProof := deterministicTxResults.ProveResult(int(txIndex))
+	// Get the marshalled transaction result
+	txResultMarshalled, err := deterministicTxResults[txIndex].Marshal()
+	if err != nil {
+		return nil, err
+	}
 
 	return &ctypes.ResultBridgeCommitmentInclusionProof{
-		BridgeCommitmentMerkleProof: *bcProof,
-		LastResultsMerkleProof:      txMerkleProof,
+		BridgeCommitmentMerkleProof: ctypes.NewHexMerkleProof(*bcProof),
+		LastResultsMerkleProof:      ctypes.NewHexMerkleProof(txMerkleProof),
+		TxResultMarshalled:          txResultMarshalled,
+		BridgeCommitmentLeaf:        bcLeaf,
 	}, nil
 }
 
