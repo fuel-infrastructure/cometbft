@@ -19,14 +19,19 @@ type Reactor struct {
 
 	dataSizeBytes  int
 	waitBeforeSend time.Duration
+
+	recvBufferCapacity  int
+	recvMessageCapacity int
 }
 
 // NewReactor returns a new Reactor.
 func NewReactor(config *config.BlobsConfig) *Reactor {
 	memR := &Reactor{
-		myTurnToSend:   config.SendFirst,
-		dataSizeBytes:  config.DataSizeBytes,
-		waitBeforeSend: config.WaitBeforeSend,
+		myTurnToSend:        config.SendFirst,
+		dataSizeBytes:       config.DataSizeBytes,
+		waitBeforeSend:      config.WaitBeforeSend,
+		recvBufferCapacity:  config.RecvBufferCapacity,
+		recvMessageCapacity: config.RecvMessageCapacity,
 	}
 	memR.BaseReactor = *p2p.NewBaseReactor("Blobs", memR)
 
@@ -40,8 +45,8 @@ func (blobsR *Reactor) GetChannels() []*p2p.ChannelDescriptor {
 		{
 			ID:                  BlobsChannel,
 			Priority:            5,
-			RecvBufferCapacity:  1e6, // 1 MiB
-			RecvMessageCapacity: 2e9, // 2 GB
+			RecvBufferCapacity:  blobsR.recvBufferCapacity,
+			RecvMessageCapacity: blobsR.recvMessageCapacity,
 			MessageType:         &protoblobs.Message{},
 		},
 	}

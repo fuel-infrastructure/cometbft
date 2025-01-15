@@ -345,6 +345,10 @@ data_size_bytes = {{ .Blobs.DataSizeBytes }}
 
 wait_before_send = "{{ .Blobs.WaitBeforeSend }}"
 
+recv_buffer_capacity = "{{ .Blobs.RecvBufferCapacity }}"
+
+recv_message_capacity = "{{ .Blobs.RecvMessageCapacity }}"
+
 #######################################################
 ###          Mempool Configuration Option          ###
 #######################################################
