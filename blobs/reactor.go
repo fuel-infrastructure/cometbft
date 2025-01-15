@@ -40,6 +40,7 @@ func (blobsR *Reactor) GetChannels() []*p2p.ChannelDescriptor {
 		{
 			ID:                  BlobsChannel,
 			Priority:            5,
+			RecvBufferCapacity:  1e6, // 1 MiB
 			RecvMessageCapacity: 1e9, // 1 GB
 			MessageType:         &protoblobs.Message{},
 		},
