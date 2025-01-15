@@ -118,11 +118,11 @@ func (blobsR *Reactor) broadcastBlobRoutine(peer p2p.Peer) {
 			}
 
 			blobsR.myTurnToSend = false
+			blobsR.Logger.Info("successful send")
 		}
 
 		select {
 		case <-time.After(SleepIntervalMS * time.Millisecond):
-			blobsR.Logger.Info("sleeping...")
 			continue
 		case <-peer.Quit():
 			return
