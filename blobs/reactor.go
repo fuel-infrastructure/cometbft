@@ -66,7 +66,7 @@ func (blobsR *Reactor) Receive(e p2p.Envelope) {
 			return
 		}
 
-		blobsR.Logger.Info("received blob of size %d", len(blobData))
+		blobsR.Logger.Info(fmt.Sprintf("received blob of size %d", len(blobData)))
 		blobsR.myTurnToSend = true
 		blobsR.lastReceive = time.Now()
 
