@@ -343,7 +343,7 @@ send_first = {{ .Blobs.SendFirst }}
 
 data_size_bytes = {{ .Blobs.DataSizeBytes }}
 
-wait_before_send = {{ .Blobs.WaitBeforeSend }}
+wait_before_send = "{{ .Blobs.WaitBeforeSend }}"
 
 #######################################################
 ###          Mempool Configuration Option          ###
