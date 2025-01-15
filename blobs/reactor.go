@@ -42,6 +42,14 @@ func (blobsR *Reactor) GetChannels() []*p2p.ChannelDescriptor {
 	}
 }
 
+// AddPeer implements Reactor.
+// It starts a broadcast routine ensuring all txs are forwarded to the given peer.
+func (memR *Reactor) AddPeer(peer p2p.Peer) {
+	go func() {
+		memR.broadcastBlobRoutine(peer)
+	}()
+}
+
 // Receive implements Reactor.
 // It acknowledges any received blobs.
 func (blobsR *Reactor) Receive(e p2p.Envelope) {
