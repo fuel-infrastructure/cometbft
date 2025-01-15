@@ -1,0 +1,14 @@
+syntax = "proto3";
+package tendermint.blobs;
+
+option go_package = "github.com/cometbft/cometbft/proto/tendermint/blobs";
+
+message Blob {
+  bytes data = 1;
+}
+
+message Message {
+  oneof sum {
+    Blob blob = 1;
+  }
+}

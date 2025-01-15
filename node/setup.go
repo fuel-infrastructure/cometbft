@@ -6,12 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	_ "net/http/pprof" //nolint: gosec // securely exposed on separate, optional port
 	"strings"
 	"time"
 
-	_ "net/http/pprof" //nolint: gosec // securely exposed on separate, optional port
-
 	dbm "github.com/cometbft/cometbft-db"
+	"github.com/cometbft/cometbft/blobs"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/blocksync"
@@ -264,6 +264,13 @@ func createMempoolAndMempoolReactor(
 	}
 }
 
+func createBlobsReactor(config *cfg.Config, logger log.Logger) *blobs.Reactor {
+	blobsLogger := logger.With("module", "blobs")
+	evidenceReactor := blobs.NewReactor(config.Blobs)
+	evidenceReactor.SetLogger(blobsLogger)
+	return evidenceReactor
+}
+
 func createEvidenceReactor(config *cfg.Config, dbProvider cfg.DBProvider,
 	stateStore sm.Store, blockStore *store.BlockStore, logger log.Logger,
 ) (*evidence.Reactor, *evidence.Pool, error) {
@@ -413,6 +420,7 @@ func createSwitch(config *cfg.Config,
 	p2pMetrics *p2p.Metrics,
 	peerFilters []p2p.PeerFilterFunc,
 	mempoolReactor p2p.Reactor,
+	blobsReactor p2p.Reactor,
 	bcReactor p2p.Reactor,
 	stateSyncReactor *statesync.Reactor,
 	consensusReactor *cs.Reactor,
@@ -431,6 +439,7 @@ func createSwitch(config *cfg.Config,
 	if config.Mempool.Type != cfg.MempoolTypeNop {
 		sw.AddReactor("MEMPOOL", mempoolReactor)
 	}
+	sw.AddReactor("BLOBS", blobsReactor)
 	sw.AddReactor("BLOCKSYNC", bcReactor)
 	sw.AddReactor("CONSENSUS", consensusReactor)
 	sw.AddReactor("EVIDENCE", evidenceReactor)

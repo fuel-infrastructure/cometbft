@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	_ "net/http/pprof" //nolint: gosec
 	"os"
 	"time"
 
@@ -38,8 +39,6 @@ import (
 	"github.com/cometbft/cometbft/types"
 	cmttime "github.com/cometbft/cometbft/types/time"
 	"github.com/cometbft/cometbft/version"
-
-	_ "net/http/pprof" //nolint: gosec
 )
 
 // Node is the highest level interface to a full CometBFT node.
@@ -66,6 +65,7 @@ type Node struct {
 	blockStore        *store.BlockStore // store the blockchain to disk
 	bcReactor         p2p.Reactor       // for block-syncing
 	mempoolReactor    p2p.Reactor       // for gossipping transactions
+	blobsReactor      p2p.Reactor       // for exchanging blobs
 	mempool           mempl.Mempool
 	stateSync         bool                    // whether the node should state sync on startup
 	stateSyncReactor  *statesync.Reactor      // for hosting and restoring state sync snapshots
@@ -378,6 +378,8 @@ func NewNodeWithContext(ctx context.Context,
 
 	mempool, mempoolReactor := createMempoolAndMempoolReactor(config, proxyApp, state, memplMetrics, logger)
 
+	blobsReactor := createBlobsReactor(config, logger)
+
 	evidenceReactor, evidencePool, err := createEvidenceReactor(config, dbProvider, stateStore, blockStore, logger)
 	if err != nil {
 		return nil, err
@@ -437,7 +439,7 @@ func NewNodeWithContext(ctx context.Context,
 
 	p2pLogger := logger.With("module", "p2p")
 	sw := createSwitch(
-		config, transport, p2pMetrics, peerFilters, mempoolReactor, bcReactor,
+		config, transport, p2pMetrics, peerFilters, mempoolReactor, blobsReactor, bcReactor,
 		stateSyncReactor, consensusReactor, evidenceReactor, nodeInfo, nodeKey, p2pLogger,
 	)
 
@@ -491,6 +493,7 @@ func NewNodeWithContext(ctx context.Context,
 		blockStore:       blockStore,
 		bcReactor:        bcReactor,
 		mempoolReactor:   mempoolReactor,
+		blobsReactor:     blobsReactor,
 		mempool:          mempool,
 		consensusState:   consensusState,
 		consensusReactor: consensusReactor,

@@ -75,6 +75,7 @@ type Config struct {
 	RPC             *RPCConfig             `mapstructure:"rpc"`
 	P2P             *P2PConfig             `mapstructure:"p2p"`
 	Mempool         *MempoolConfig         `mapstructure:"mempool"`
+	Blobs           *BlobsConfig           `mapstructure:"blobs"`
 	StateSync       *StateSyncConfig       `mapstructure:"statesync"`
 	BlockSync       *BlockSyncConfig       `mapstructure:"blocksync"`
 	Consensus       *ConsensusConfig       `mapstructure:"consensus"`
@@ -90,6 +91,7 @@ func DefaultConfig() *Config {
 		RPC:             DefaultRPCConfig(),
 		P2P:             DefaultP2PConfig(),
 		Mempool:         DefaultMempoolConfig(),
+		Blobs:           DefaultBlobsConfig(),
 		StateSync:       DefaultStateSyncConfig(),
 		BlockSync:       DefaultBlockSyncConfig(),
 		Consensus:       DefaultConsensusConfig(),
@@ -695,6 +697,22 @@ func DefaultFuzzConnConfig() *FuzzConnConfig {
 		ProbDropRW:   0.2,
 		ProbDropConn: 0.00,
 		ProbSleep:    0.00,
+	}
+}
+
+//-----------------------------------------------------------------------------
+// BlobsConfig
+
+type BlobsConfig struct {
+	SendFirst     bool `mapstructure:"send_first"`
+	DataSizeBytes int  `mapstructure:"data_size_bytes"`
+}
+
+// DefaultBlobsConfig returns a default configuration for blobs
+func DefaultBlobsConfig() *BlobsConfig {
+	return &BlobsConfig{
+		SendFirst:     false,
+		DataSizeBytes: 100,
 	}
 }
 
