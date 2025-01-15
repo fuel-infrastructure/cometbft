@@ -66,7 +66,7 @@ func (blobsR *Reactor) Receive(e p2p.Envelope) {
 			return
 		}
 
-		blobsR.Logger.Info(fmt.Sprintf("received blob of size %d", len(blobData)))
+		blobsR.Logger.Info(fmt.Sprintf("received blob of size %d with id %d", len(blobData), msg.GetId()))
 		blobsR.myTurnToSend = true
 		blobsR.lastReceive = time.Now()
 
@@ -83,6 +83,10 @@ func generateRandomData(size int) []byte {
 	data := make([]byte, size)
 	rand.New(rand.NewSource(time.Now().UnixNano())).Read(data)
 	return data
+}
+
+func generateRandomId() uint64 {
+	return rand.New(rand.NewSource(time.Now().UnixNano())).Uint64()
 }
 
 // Send new blobs to peer.
@@ -105,12 +109,13 @@ func (blobsR *Reactor) broadcastBlobRoutine(peer p2p.Peer) {
 			}
 
 			blobsR.Logger.Info("generating data...")
+			id := generateRandomId()
 			data := generateRandomData(blobsR.dataSizeBytes)
-			blobsR.Logger.Info("generated data...")
+			blobsR.Logger.Info(fmt.Sprintf("generated data of size %d with id %d...", len(data), id))
 
 			success := peer.Send(p2p.Envelope{
 				ChannelID: BlobsChannel,
-				Message:   &protoblobs.Blob{Data: data},
+				Message:   &protoblobs.Blob{Id: id, Data: data},
 			})
 			if !success {
 				time.Sleep(UnsuccessfulSendSleepIntervalMS * time.Millisecond)

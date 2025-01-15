@@ -4,7 +4,8 @@ package tendermint.blobs;
 option go_package = "github.com/cometbft/cometbft/proto/tendermint/blobs";
 
 message Blob {
-  bytes data = 1;
+  uint64 id   = 1;
+  bytes  data = 2;
 }
 
 message Message {
