@@ -67,7 +67,15 @@ func (blobsR *Reactor) Receive(e p2p.Envelope) {
 			return
 		}
 
-		blobsR.Logger.Info(fmt.Sprintf("received blob of size %d with id %d", len(blobData), msg.GetId()))
+		timeElapsed := time.Now().Sub(msg.TimeSent)
+		bytesPerSecond := float64(len(blobData)) / timeElapsed.Seconds()
+		blobsR.Logger.Info("received blob",
+			"size", len(blobData),
+			"id", msg.Id,
+			"time_sent", msg.TimeSent,
+			"time_elapsed", timeElapsed,
+			"bytes_per_second", bytesPerSecond,
+		)
 		blobsR.myTurnToSend = true
 		blobsR.lastReceive = time.Now()
 
@@ -116,7 +124,7 @@ func (blobsR *Reactor) broadcastBlobRoutine(peer p2p.Peer) {
 
 			success := peer.Send(p2p.Envelope{
 				ChannelID: BlobsChannel,
-				Message:   &protoblobs.Blob{Id: id, Data: data},
+				Message:   &protoblobs.Blob{Id: id, Data: data, TimeSent: time.Now()},
 			})
 			if !success {
 				time.Sleep(UnsuccessfulSendSleepIntervalMS * time.Millisecond)
