@@ -14,15 +14,19 @@ import (
 type Reactor struct {
 	p2p.BaseReactor
 
-	dataSizeBytes int
-	myTurn        bool
+	myTurnToSend bool
+	lastReceive  time.Time
+
+	dataSizeBytes  int
+	waitBeforeSend time.Duration
 }
 
 // NewReactor returns a new Reactor.
 func NewReactor(config *config.BlobsConfig) *Reactor {
 	memR := &Reactor{
-		myTurn:        config.SendFirst,
-		dataSizeBytes: config.DataSizeBytes,
+		myTurnToSend:   config.SendFirst,
+		dataSizeBytes:  config.DataSizeBytes,
+		waitBeforeSend: config.WaitBeforeSend,
 	}
 	memR.BaseReactor = *p2p.NewBaseReactor("Blobs", memR)
 
@@ -63,7 +67,8 @@ func (blobsR *Reactor) Receive(e p2p.Envelope) {
 		}
 
 		blobsR.Logger.Info("received blob of size %d", len(blobData))
-		blobsR.myTurn = true
+		blobsR.myTurnToSend = true
+		blobsR.lastReceive = time.Now()
 
 	default:
 		blobsR.Logger.Error("unknown message type", "src", e.Src, "chId", e.ChannelID, "msg", e.Message)
@@ -88,10 +93,21 @@ func (blobsR *Reactor) broadcastBlobRoutine(peer p2p.Peer) {
 			return
 		}
 
-		if blobsR.myTurn {
-			blobsR.Logger.Info("my turn...")
+		if blobsR.myTurnToSend {
+			blobsR.Logger.Info("my turn but might need to wait...")
+			select {
+			case <-time.After(time.Until(blobsR.lastReceive.Add(blobsR.waitBeforeSend))):
+				break
+			case <-peer.Quit():
+				return
+			case <-blobsR.Quit():
+				return
+			}
+
+			blobsR.Logger.Info("generating data...")
 			data := generateRandomData(blobsR.dataSizeBytes)
 			blobsR.Logger.Info("generated data...")
+
 			success := peer.Send(p2p.Envelope{
 				ChannelID: BlobsChannel,
 				Message:   &protoblobs.Blob{Data: data},
@@ -101,11 +117,11 @@ func (blobsR *Reactor) broadcastBlobRoutine(peer p2p.Peer) {
 				continue
 			}
 
-			blobsR.myTurn = false
+			blobsR.myTurnToSend = false
 		}
 
 		select {
-		case <-time.After(SuccessfulSendSleepIntervalMS * time.Millisecond):
+		case <-time.After(SleepIntervalMS * time.Millisecond):
 			blobsR.Logger.Info("sleeping...")
 			continue
 		case <-peer.Quit():

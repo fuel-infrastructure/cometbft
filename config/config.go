@@ -704,15 +704,17 @@ func DefaultFuzzConnConfig() *FuzzConnConfig {
 // BlobsConfig
 
 type BlobsConfig struct {
-	SendFirst     bool `mapstructure:"send_first"`
-	DataSizeBytes int  `mapstructure:"data_size_bytes"`
+	SendFirst      bool          `mapstructure:"send_first"`
+	DataSizeBytes  int           `mapstructure:"data_size_bytes"`
+	WaitBeforeSend time.Duration `mapstructure:"wait_before_send"`
 }
 
 // DefaultBlobsConfig returns a default configuration for blobs
 func DefaultBlobsConfig() *BlobsConfig {
 	return &BlobsConfig{
-		SendFirst:     false,
-		DataSizeBytes: 100,
+		SendFirst:      false,
+		DataSizeBytes:  100,
+		WaitBeforeSend: time.Second,
 	}
 }
 

@@ -5,5 +5,5 @@ const (
 
 	UnsuccessfulSendSleepIntervalMS = 100
 
-	SuccessfulSendSleepIntervalMS = 500
+	SleepIntervalMS = 100
 )
