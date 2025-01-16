@@ -12,6 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/cometbft/cometbft/blobs"
 	"github.com/cosmos/gogoproto/proto"
 
 	"github.com/cometbft/cometbft/config"
@@ -853,6 +854,9 @@ func (ch *Channel) isSendPending() bool {
 			return false
 		}
 		ch.sending = <-ch.sendQueue
+		if ch.desc.ID == blobs.BlobsChannel {
+			ch.Logger.Info("BLOBS :: channel is sending blob", "now", time.Now())
+		}
 	}
 	return true
 }
@@ -863,11 +867,17 @@ func (ch *Channel) nextPacketMsg() tmp2p.PacketMsg {
 	packet := tmp2p.PacketMsg{ChannelID: int32(ch.desc.ID)}
 	maxSize := ch.maxPacketMsgPayloadSize
 	if len(ch.sending) <= maxSize {
+		if ch.desc.ID == blobs.BlobsChannel {
+			ch.Logger.Info("BLOBS :: blob is good size; EOF", "now", time.Now(), "max_size", maxSize)
+		}
 		packet.Data = ch.sending
 		packet.EOF = true
 		ch.sending = nil
 		atomic.AddInt32(&ch.sendQueueSize, -1) // decrement sendQueueSize
 	} else {
+		if ch.desc.ID == blobs.BlobsChannel {
+			ch.Logger.Info("BLOBS :: blob too large; splitting", "now", time.Now(), "max_size", maxSize)
+		}
 		packet.Data = ch.sending[:maxSize]
 		packet.EOF = false
 		ch.sending = ch.sending[maxSize:]
@@ -879,7 +889,13 @@ func (ch *Channel) nextPacketMsg() tmp2p.PacketMsg {
 // Not goroutine-safe.
 func (ch *Channel) writePacketMsgTo(w protoio.Writer) (n int, err error) {
 	packet := ch.nextPacketMsg()
+	if ch.desc.ID == blobs.BlobsChannel {
+		ch.Logger.Info("BLOBS :: writing package message", "now", time.Now())
+	}
 	n, err = w.WriteMsg(mustWrapPacket(&packet))
+	if ch.desc.ID == blobs.BlobsChannel {
+		ch.Logger.Info("BLOBS :: wrote package message", "now", time.Now())
+	}
 	if err != nil {
 		return 0, err
 	}

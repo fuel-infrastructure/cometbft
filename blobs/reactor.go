@@ -74,7 +74,7 @@ func (blobsR *Reactor) Receive(e p2p.Envelope) {
 
 		timeElapsed := time.Now().Sub(msg.TimeSent)
 		bytesPerSecond := float64(len(blobData)) / timeElapsed.Seconds()
-		blobsR.Logger.Info("received blob",
+		blobsR.Logger.Info("BLOBS :: received blob",
 			"size", len(blobData),
 			"id", msg.Id,
 			"time_sent", msg.TimeSent,
@@ -112,9 +112,10 @@ func (blobsR *Reactor) broadcastBlobRoutine(peer p2p.Peer) {
 		}
 
 		if blobsR.myTurnToSend {
-			blobsR.Logger.Info("my turn but might need to wait...")
+			timeUntil := time.Until(blobsR.lastReceive.Add(blobsR.waitBeforeSend))
+			blobsR.Logger.Info("BLOBS :: my turn but might need to wait", "wait", timeUntil)
 			select {
-			case <-time.After(time.Until(blobsR.lastReceive.Add(blobsR.waitBeforeSend))):
+			case <-time.After(timeUntil):
 				break
 			case <-peer.Quit():
 				return
@@ -122,10 +123,10 @@ func (blobsR *Reactor) broadcastBlobRoutine(peer p2p.Peer) {
 				return
 			}
 
-			blobsR.Logger.Info("generating data...")
+			blobsR.Logger.Info("BLOBS :: generating data...")
 			id := generateRandomId()
 			data := generateRandomData(blobsR.dataSizeBytes)
-			blobsR.Logger.Info(fmt.Sprintf("generated data of size %d with id %d...", len(data), id))
+			blobsR.Logger.Info(fmt.Sprintf("BLOBS :: generated data of size %d with id %d...", len(data), id))
 
 			success := peer.Send(p2p.Envelope{
 				ChannelID: BlobsChannel,
@@ -137,7 +138,7 @@ func (blobsR *Reactor) broadcastBlobRoutine(peer p2p.Peer) {
 			}
 
 			blobsR.myTurnToSend = false
-			blobsR.Logger.Info("successful send")
+			blobsR.Logger.Info("successfully initialised send", "now", time.Now())
 		}
 
 		select {
