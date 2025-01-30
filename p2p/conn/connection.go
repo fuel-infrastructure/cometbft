@@ -860,6 +860,12 @@ func (ch *Channel) isSendPending() bool {
 	return true
 }
 
+var (
+	BlobsWritingPacketMessageLogEnabled = true
+	BlobsWrotePacketMessageLogEnabled   = true
+	BlobsBlobTooLargeLogEnabled         = true
+)
+
 // Creates a new PacketMsg to send.
 // Not goroutine-safe
 func (ch *Channel) nextPacketMsg() tmp2p.PacketMsg {
@@ -874,7 +880,7 @@ func (ch *Channel) nextPacketMsg() tmp2p.PacketMsg {
 		ch.sending = nil
 		atomic.AddInt32(&ch.sendQueueSize, -1) // decrement sendQueueSize
 	} else {
-		if ch.desc.ID == byte(0x99) {
+		if ch.desc.ID == byte(0x99) && BlobsBlobTooLargeLogEnabled {
 			ch.Logger.Info("BLOBS :: blob too large; splitting", "now", time.Now(), "max_size", maxSize)
 		}
 		packet.Data = ch.sending[:maxSize]
@@ -888,11 +894,11 @@ func (ch *Channel) nextPacketMsg() tmp2p.PacketMsg {
 // Not goroutine-safe.
 func (ch *Channel) writePacketMsgTo(w protoio.Writer) (n int, err error) {
 	packet := ch.nextPacketMsg()
-	if ch.desc.ID == byte(0x99) {
+	if ch.desc.ID == byte(0x99) && BlobsWritingPacketMessageLogEnabled {
 		ch.Logger.Info("BLOBS :: writing package message", "now", time.Now())
 	}
 	n, err = w.WriteMsg(mustWrapPacket(&packet))
-	if ch.desc.ID == byte(0x99) {
+	if ch.desc.ID == byte(0x99) && BlobsWrotePacketMessageLogEnabled {
 		ch.Logger.Info("BLOBS :: wrote package message", "now", time.Now())
 	}
 	if err != nil {
