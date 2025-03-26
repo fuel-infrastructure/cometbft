@@ -1,0 +1,14 @@
+syntax = "proto3";
+package tendermint.types;
+
+option go_package = "github.com/cometbft/cometbft/proto/tendermint/types";
+
+message BlobTx {
+  bytes tx = 1;
+  Blob blob = 2;
+  string type_id = 3;
+}
+
+message Blob {
+  bytes data = 1;
+}
