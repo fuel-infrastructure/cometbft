@@ -705,6 +705,11 @@ func fireEvents(
 	}
 
 	for i, tx := range block.Data.Txs {
+		// Unmarshal blob tx, if applicable. We want the tx indexer to only be concerned with the inner tx.
+		blobTx, isBlobTx := types.UnmarshalBlobTx(tx)
+		if isBlobTx {
+			tx = blobTx.Tx
+		}
 		if err := eventBus.PublishEventTx(types.EventDataTx{TxResult: abci.TxResult{
 			Height: block.Height,
 			Index:  uint32(i),
