@@ -19,8 +19,9 @@ func UnmarshalBlobTx(tx Tx) (blobTx cmtproto.BlobTx, isBlob bool) {
 
 func MarshalBlobTx(tx []byte, blob *cmtproto.Blob) (Tx, error) {
 	bTx := cmtproto.BlobTx{
-		Tx:   tx,
-		Blob: blob,
+		Tx:     tx,
+		Blob:   blob,
+		TypeId: consts.ProtoBlobTxTypeID,
 	}
 	return bTx.Marshal()
 }
